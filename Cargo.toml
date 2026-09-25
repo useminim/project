@@ -1,0 +1,37 @@
+[workspace]
+resolver = "3"
+members = ["apps/desktop/src-tauri", "crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+publish = false
+
+[workspace.dependencies]
+# Internal crates
+minim-core = { path = "crates/core" }
+minim-extract = { path = "crates/extract" }
+minim-shared = { path = "crates/shared" }
+
+# Desktop
+tauri = { version = "2", features = [] }
+tauri-build = { version = "2", features = [] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+# Allowed in tests through `clippy.toml`.
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true
+# `panic = "abort"` is deliberately not set: unwinding lets a panicking task
+# (e.g. a third-party parser on a malformed document) fail without taking down
+# the whole application.

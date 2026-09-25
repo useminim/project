@@ -1,0 +1,7 @@
+# Normalize line endings to LF on every platform (formatters check for LF).
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.ico binary
+*.icns binary
