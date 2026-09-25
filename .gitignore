@@ -1,0 +1,51 @@
+# Rust
+target/
+
+# Node
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+coverage/
+
+# Build output
+dist/
+dist-ssr/
+
+# Tauri generated files
+apps/desktop/src-tauri/gen/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.directory
+.Trash-*
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+.fleet/
+.zed/

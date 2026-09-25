@@ -1,0 +1,59 @@
+# cargo-deny configuration: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+# Only resolve dependencies for the platforms we ship on.
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+  "x86_64-pc-windows-msvc",
+  "aarch64-pc-windows-msvc",
+  "x86_64-apple-darwin",
+  "aarch64-apple-darwin",
+]
+
+[advisories]
+# Unmaintained crates are only reported when they are direct dependencies of
+# the workspace: transitive ones (e.g. Tauri's Linux GTK stack) are out of our
+# control.
+unmaintained = "workspace"
+ignore = []
+
+[licenses]
+# minim is proprietary software: only permissive licenses, plus MPL-2.0
+# (file-level copyleft, compatible with proprietary distribution when the
+# MPL-covered files are not modified). GPL/LGPL/AGPL are refused.
+allow = [
+  "0BSD",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "CDLA-Permissive-2.0",
+  "ISC",
+  "MIT",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+confidence-threshold = 0.8
+# The allow list is a policy, not an inventory of the current tree.
+unused-allowed-license = "allow"
+
+[licenses.private]
+# Workspace crates are not published and carry no license.
+ignore = true
+
+[bans]
+# Tauri's dependency tree contains many duplicated versions; tracked later.
+multiple-versions = "allow"
+wildcards = "deny"
+# Path dependencies between workspace crates have no version requirement.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

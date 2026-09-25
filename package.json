@@ -1,0 +1,23 @@
+{
+  "name": "minim",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @minim/desktop tauri dev",
+    "build": "pnpm --filter @minim/desktop tauri build",
+    "test": "pnpm run test:js && pnpm run test:rust",
+    "test:js": "pnpm -r --if-present test",
+    "test:rust": "cargo test --workspace --locked",
+    "lint": "pnpm run lint:js && pnpm run lint:rust",
+    "lint:js": "biome check && pnpm -r --if-present typecheck",
+    "lint:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "format": "biome check --write && cargo fmt --all"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14"
+  }
+}
