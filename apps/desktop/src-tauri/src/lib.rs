@@ -1,5 +1,6 @@
 //! Application desktop minim : mise en place du runtime Tauri.
 
+pub mod error;
 pub mod logging;
 
 use tauri::Manager;

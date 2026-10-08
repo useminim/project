@@ -50,6 +50,7 @@ pub enum Owner {
 /// Sérialisé avec un champ `code` pour que l'interface affiche un message
 /// traduit ; les index de conditions et d'actions commencent à 0.
 #[derive(Debug, Clone, PartialEq, Eq, Error, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(tag = "code", rename_all = "snake_case")]
 pub enum ValidationError {
     /// Le nom est vide ou ne contient que des espaces.

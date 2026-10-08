@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["apps/**", "crates/**", "*.json", ".vscode/*.json", "!**/src-tauri/gen"]
+    "includes": [
+      "apps/**",
+      "crates/**",
+      "*.json",
+      ".vscode/*.json",
+      "!**/src-tauri/gen",
+      "!**/src/bindings"
+    ]
   },
   "formatter": {
     "enabled": true,
