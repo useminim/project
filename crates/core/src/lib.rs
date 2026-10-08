@@ -10,6 +10,7 @@ pub mod id;
 pub mod profile;
 pub mod template;
 pub mod trigger;
+pub mod workflow;
 
 pub use action::{Action, ActionKind, ConvertFormat, ExportFormat};
 pub use execution::{ActionRecord, ActionStatus, ExecutionLog, ExecutionStatus};
@@ -18,3 +19,4 @@ pub use id::{DocumentId, IdError, OrganizationId, ProfileId, RunId, UserId, Work
 pub use profile::{DetectedField, DocumentProfile, FileInfo, TextSource};
 pub use template::{Segment, Template, TemplateError};
 pub use trigger::{Condition, ConditionCategory, MatchMode, MatchResult, Trigger, TriggerSource};
+pub use workflow::{Owner, ValidationError, Workflow};
