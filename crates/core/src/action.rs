@@ -101,7 +101,8 @@ mod tests {
 
     #[test]
     fn reads_the_documented_example() {
-        let value = json!({ "type": "rename", "template": "{client_name}_{date:YYYY-MM-DD}.pdf" });
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/action.json")).unwrap();
         let action: Action = serde_json::from_value(value.clone()).unwrap();
 
         assert_eq!(action.kind(), ActionKind::Rename);

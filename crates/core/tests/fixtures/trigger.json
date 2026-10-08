@@ -1,0 +1,9 @@
+{
+  "match": "all",
+  "conditions": [
+    { "type": "file_name_contains", "value": "facture", "case_sensitive": false },
+    { "type": "content_has_field", "field": "invoice_total" },
+    { "type": "content_contains_table" }
+  ],
+  "source": "manual"
+}

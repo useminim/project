@@ -148,15 +148,8 @@ mod tests {
 
     #[test]
     fn reads_the_documented_example() {
-        let value = json!({
-            "match": "all",
-            "conditions": [
-                { "type": "file_name_contains", "value": "facture", "case_sensitive": false },
-                { "type": "content_has_field", "field": "invoice_total" },
-                { "type": "content_contains_table" }
-            ],
-            "source": "manual"
-        });
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/trigger.json")).unwrap();
         let trigger: Trigger = serde_json::from_value(value.clone()).unwrap();
 
         assert_eq!(trigger.match_mode, MatchMode::All);

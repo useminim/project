@@ -66,17 +66,8 @@ mod tests {
 
     #[test]
     fn reads_the_documented_example() {
-        let value = json!({
-            "document_id": "doc_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
-            "file": { "name": "Facture_Dupont.pdf", "extension": "pdf", "size": 182_044 },
-            "text_source": "native",
-            "fields": {
-                "client_name": { "value": "Dupont SARL", "confidence": 0.92 },
-                "invoice_total": { "value": "1250.00", "currency": "EUR", "confidence": 0.88 }
-            },
-            "has_tables": true,
-            "keywords": ["facture", "tva", "échéance"]
-        });
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/document_profile.json")).unwrap();
         let profile: DocumentProfile = serde_json::from_value(value.clone()).unwrap();
 
         assert_eq!(profile.text_source, TextSource::Native);

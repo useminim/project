@@ -70,16 +70,8 @@ mod tests {
 
     #[test]
     fn reads_the_documented_example() {
-        let value = json!({
-            "id": "run_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
-            "document_id": "doc_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
-            "workflow_id": "wf_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
-            "workflow_version": 3,
-            "status": "success",
-            "actions": [ { "type": "rename", "status": "success", "duration_ms": 4 } ],
-            "error": null,
-            "started_at": "2026-09-30T10:05:00Z"
-        });
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/execution_log.json")).unwrap();
         let log: ExecutionLog = serde_json::from_value(value.clone()).unwrap();
 
         assert_eq!(log.status, ExecutionStatus::Success);

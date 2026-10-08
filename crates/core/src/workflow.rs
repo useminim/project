@@ -368,28 +368,7 @@ mod tests {
     use crate::trigger::{MatchMode, TriggerSource};
 
     fn documented_example() -> Value {
-        json!({
-            "schema_version": 1,
-            "id": "wf_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
-            "name": "Factures fournisseurs",
-            "version": 3,
-            "enabled": true,
-            "priority": 10,
-            "continue_on_match": false,
-            "trigger": {
-                "match": "all",
-                "conditions": [
-                    { "type": "file_name_contains", "value": "facture", "case_sensitive": false }
-                ],
-                "source": "manual"
-            },
-            "actions": [
-                { "type": "rename", "template": "{client_name}_{date:YYYY-MM-DD}.pdf" }
-            ],
-            "owner": { "kind": "user", "id": "usr_01J8ZK3V9Q4X7M2N5P6R8T0W1Y" },
-            "created_at": "2026-09-30T10:00:00Z",
-            "updated_at": "2026-09-30T10:00:00Z"
-        })
+        serde_json::from_str(include_str!("../tests/fixtures/workflow.json")).unwrap()
     }
 
     fn valid_workflow() -> Workflow {

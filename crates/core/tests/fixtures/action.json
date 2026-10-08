@@ -1,0 +1,1 @@
+{ "type": "rename", "template": "{client_name}_{date:YYYY-MM-DD}.pdf" }
