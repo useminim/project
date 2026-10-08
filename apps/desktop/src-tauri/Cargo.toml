@@ -15,7 +15,19 @@ name = "minim_desktop_lib"
 tauri-build.workspace = true
 
 [dependencies]
+minim-core.workspace = true
+serde.workspace = true
 tauri.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-appender.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+minim-core = { workspace = true, features = ["ts"] }
+serde_json.workspace = true
+tempfile.workspace = true
+ts-rs.workspace = true
 
 [lints]
 workspace = true

@@ -10,10 +10,15 @@ publish.workspace = true
 chrono.workspace = true
 serde.workspace = true
 thiserror.workspace = true
+ts-rs = { workspace = true, optional = true }
 ulid.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
+
+[features]
+# Dérive les types TypeScript (ts-rs) des types échangés avec l'interface.
+ts = ["dep:ts-rs"]
 
 [lints]
 workspace = true
