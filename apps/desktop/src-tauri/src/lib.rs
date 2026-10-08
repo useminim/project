@@ -1,5 +1,6 @@
 //! Application desktop minim : mise en place du runtime Tauri.
 
+pub mod diagnostics;
 pub mod error;
 pub mod logging;
 
@@ -20,7 +21,13 @@ pub fn run() -> tauri::Result<()> {
             let log_dir = app.path().app_log_dir()?;
             let guard = logging::init(&log_dir)?;
             app.manage(guard);
-            tracing::info!(version = env!("CARGO_PKG_VERSION"), "démarrage de minim");
+            let info = diagnostics::DiagnosticInfo::current();
+            tracing::info!(
+                version = info.app_version,
+                os = info.os,
+                arch = info.arch,
+                "démarrage de minim"
+            );
             Ok(())
         })
         .run(tauri::generate_context!())
