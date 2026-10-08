@@ -3,10 +3,14 @@
 //! Ces types font foi pour le modèle de données ; leur forme JSON est celle
 //! échangée avec l'interface et synchronisée avec le cloud.
 
+pub mod action;
 pub mod field;
 pub mod id;
 pub mod template;
+pub mod trigger;
 
+pub use action::{Action, ActionKind, ConvertFormat, ExportFormat};
 pub use field::{FieldName, FieldNameError};
 pub use id::{DocumentId, IdError, OrganizationId, ProfileId, RunId, UserId, WorkflowId};
 pub use template::{Segment, Template, TemplateError};
+pub use trigger::{Condition, ConditionCategory, MatchMode, MatchResult, Trigger, TriggerSource};
