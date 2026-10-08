@@ -61,12 +61,38 @@ pub enum Owner {
 
 /// Problème qui empêche d'enregistrer ou d'exécuter un workflow.
 ///
-/// Sérialisé avec un champ `code` pour que l'interface affiche un message
-/// traduit ; les index de conditions et d'actions commencent à 0.
+/// Sérialisé à plat : `{ "path": "actions[2]", "code": "empty_destination" }`.
+/// Le chemin désigne l'élément concerné (`name`, `trigger.conditions[1]`,
+/// `trigger.conditions[1].conditions[0]`, `actions[2]`…), les index commençant
+/// à 0. L'interface affiche le message de la clé de traduction
+/// `validation.<code>`.
+#[derive(Debug, Clone, PartialEq, Eq, Error, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[error("{path} : {kind}")]
+pub struct ValidationError {
+    /// Chemin de l'élément concerné dans le workflow.
+    pub path: String,
+    /// Nature du problème.
+    #[serde(flatten)]
+    #[cfg_attr(feature = "ts", ts(flatten))]
+    pub kind: ValidationErrorKind,
+}
+
+impl ValidationError {
+    /// Crée un problème sur l'élément désigné par `path`.
+    pub fn new(path: impl Into<String>, kind: ValidationErrorKind) -> Self {
+        Self {
+            path: path.into(),
+            kind,
+        }
+    }
+}
+
+/// Nature d'un problème de validation, sérialisée dans le champ `code`.
 #[derive(Debug, Clone, PartialEq, Eq, Error, Serialize)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(tag = "code", rename_all = "snake_case")]
-pub enum ValidationError {
+pub enum ValidationErrorKind {
     /// Le workflow a été écrit par une version plus récente de minim.
     #[error("version de schéma {found} non prise en charge")]
     UnsupportedSchemaVersion {
@@ -91,72 +117,56 @@ pub enum ValidationError {
     /// Le déclencheur n'a aucune condition.
     #[error("le déclencheur n'a aucune condition")]
     NoConditions,
+    /// Un groupe de conditions est vide.
+    #[error("le groupe ne contient aucune condition")]
+    EmptyGroup,
+    /// Un groupe dépasse la profondeur maximale.
+    #[error("les groupes de conditions sont imbriqués sur plus de {max_depth} niveaux")]
+    GroupTooDeep {
+        /// Profondeur maximale, niveau du déclencheur compris.
+        max_depth: usize,
+    },
     /// Le texte recherché par une condition est vide.
-    #[error("condition {index} : le texte recherché est vide")]
-    EmptySearchText {
-        /// Index de la condition.
-        index: usize,
-    },
+    #[error("le texte recherché est vide")]
+    EmptySearchText,
     /// Le format de date d'une condition est vide.
-    #[error("condition {index} : le format de date est vide")]
-    EmptyDateFormat {
-        /// Index de la condition.
-        index: usize,
-    },
+    #[error("le format de date est vide")]
+    EmptyDateFormat,
     /// Une condition sur l'extension n'en liste aucune.
-    #[error("condition {index} : aucune extension indiquée")]
-    NoExtensions {
-        /// Index de la condition.
-        index: usize,
-    },
+    #[error("aucune extension indiquée")]
+    NoExtensions,
     /// Une extension contient autre chose que des lettres et des chiffres.
-    #[error("condition {index} : extension « {extension} » invalide")]
+    #[error("extension « {extension} » invalide")]
     InvalidExtension {
-        /// Index de la condition.
-        index: usize,
         /// Extension refusée.
         extension: String,
     },
     /// Le nombre minimal de lignes d'un tableau vaut 0.
-    #[error("condition {index} : le nombre minimal de lignes doit être au moins 1")]
-    ZeroMinRows {
-        /// Index de la condition.
-        index: usize,
-    },
+    #[error("le nombre minimal de lignes doit être au moins 1")]
+    ZeroMinRows,
     /// Le seuil de similarité n'est pas compris entre 0 et 1.
-    #[error("condition {index} : le seuil doit être compris entre 0 et 1")]
-    ThresholdOutOfRange {
-        /// Index de la condition.
-        index: usize,
-    },
+    #[error("le seuil doit être compris entre 0 et 1")]
+    ThresholdOutOfRange,
     /// Le workflow n'a aucune action.
     #[error("le workflow n'a aucune action")]
     NoActions,
     /// Le modèle de nom contient un séparateur de chemin.
-    #[error("action {index} : le nouveau nom ne doit pas contenir « / » ni « \\ »")]
-    PathSeparatorInName {
-        /// Index de l'action.
-        index: usize,
-    },
+    #[error("le nouveau nom ne doit pas contenir « / » ni « \\ »")]
+    PathSeparatorInName,
     /// Le dossier de destination est vide.
-    #[error("action {index} : le dossier de destination est vide")]
-    EmptyDestination {
-        /// Index de l'action.
-        index: usize,
-    },
+    #[error("le dossier de destination est vide")]
+    EmptyDestination,
     /// Le dossier de destination n'est pas un chemin absolu.
-    #[error("action {index} : le dossier de destination doit être un chemin absolu")]
-    RelativeDestination {
-        /// Index de l'action.
-        index: usize,
-    },
+    #[error("le dossier de destination doit être un chemin absolu")]
+    RelativeDestination,
     /// Une extraction ne liste aucun champ.
-    #[error("action {index} : aucun champ à extraire")]
-    NoFieldsToExtract {
-        /// Index de l'action.
-        index: usize,
-    },
+    #[error("aucun champ à extraire")]
+    NoFieldsToExtract,
 }
+
+/// Profondeur maximale des conditions : le niveau du déclencheur compte pour 1,
+/// chaque groupe imbriqué ajoute un niveau.
+pub const MAX_CONDITION_DEPTH: usize = 3;
 
 impl Workflow {
     /// Vérifie la cohérence du workflow.
@@ -170,39 +180,51 @@ impl Workflow {
     /// Renvoie tous les problèmes trouvés, pour que le wizard puisse les
     /// afficher ensemble.
     pub fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        use ValidationErrorKind as Kind;
+
         let mut errors = Vec::new();
+        let mut push = |path: &str, kind| errors.push(ValidationError::new(path, kind));
 
         if self.schema_version > CURRENT_SCHEMA_VERSION {
-            errors.push(ValidationError::UnsupportedSchemaVersion {
-                found: self.schema_version,
-            });
+            push(
+                "schema_version",
+                Kind::UnsupportedSchemaVersion {
+                    found: self.schema_version,
+                },
+            );
         }
         if self.name.trim().is_empty() {
-            errors.push(ValidationError::EmptyName);
+            push("name", Kind::EmptyName);
         } else if self.name.chars().count() > MAX_NAME_LENGTH {
-            errors.push(ValidationError::NameTooLong {
-                max: MAX_NAME_LENGTH,
-            });
+            push(
+                "name",
+                Kind::NameTooLong {
+                    max: MAX_NAME_LENGTH,
+                },
+            );
         }
         if self.version == 0 {
-            errors.push(ValidationError::ZeroVersion);
+            push("version", Kind::ZeroVersion);
         }
         if self.updated_at < self.created_at {
-            errors.push(ValidationError::UpdatedBeforeCreated);
+            push("updated_at", Kind::UpdatedBeforeCreated);
         }
 
         if self.trigger.conditions.is_empty() {
-            errors.push(ValidationError::NoConditions);
+            push("trigger.conditions", Kind::NoConditions);
         }
-        for (index, condition) in self.trigger.conditions.iter().enumerate() {
-            validate_condition(index, condition, &mut errors);
-        }
+        validate_conditions(
+            "trigger.conditions",
+            &self.trigger.conditions,
+            1,
+            &mut errors,
+        );
 
         if self.actions.is_empty() {
-            errors.push(ValidationError::NoActions);
+            errors.push(ValidationError::new("actions", Kind::NoActions));
         }
         for (index, action) in self.actions.iter().enumerate() {
-            validate_action(index, action, &mut errors);
+            validate_action(&format!("actions[{index}]"), action, &mut errors);
         }
 
         if errors.is_empty() {
@@ -213,12 +235,34 @@ impl Workflow {
     }
 }
 
-fn validate_condition(index: usize, condition: &Condition, errors: &mut Vec<ValidationError>) {
+/// Valide les conditions d'une liste située au niveau `depth` (1 pour le
+/// déclencheur).
+fn validate_conditions(
+    list_path: &str,
+    conditions: &[Condition],
+    depth: usize,
+    errors: &mut Vec<ValidationError>,
+) {
+    for (index, condition) in conditions.iter().enumerate() {
+        let path = format!("{list_path}[{index}]");
+        validate_condition(&path, condition, depth, errors);
+    }
+}
+
+fn validate_condition(
+    path: &str,
+    condition: &Condition,
+    depth: usize,
+    errors: &mut Vec<ValidationError>,
+) {
+    use ValidationErrorKind as Kind;
+
+    let mut push = |kind| errors.push(ValidationError::new(path, kind));
     match condition {
         Condition::FileNameContains { value, .. }
         | Condition::ContentContainsText { value, .. } => {
             if value.is_empty() {
-                errors.push(ValidationError::EmptySearchText { index });
+                push(Kind::EmptySearchText);
             }
         }
         Condition::FileNameMatchesDate { format } => {
@@ -226,19 +270,18 @@ fn validate_condition(index: usize, condition: &Condition, errors: &mut Vec<Vali
                 .as_deref()
                 .is_some_and(|format| format.trim().is_empty())
             {
-                errors.push(ValidationError::EmptyDateFormat { index });
+                push(Kind::EmptyDateFormat);
             }
         }
         Condition::FileExtensionIs { values } => {
             if values.is_empty() {
-                errors.push(ValidationError::NoExtensions { index });
+                push(Kind::NoExtensions);
             }
             for extension in values {
                 let valid =
                     !extension.is_empty() && extension.chars().all(|c| c.is_ascii_alphanumeric());
                 if !valid {
-                    errors.push(ValidationError::InvalidExtension {
-                        index,
+                    push(Kind::InvalidExtension {
                         extension: extension.clone(),
                     });
                 }
@@ -247,36 +290,52 @@ fn validate_condition(index: usize, condition: &Condition, errors: &mut Vec<Vali
         Condition::ContentHasField { .. } => {}
         Condition::ContentContainsTable { min_rows } => {
             if *min_rows == Some(0) {
-                errors.push(ValidationError::ZeroMinRows { index });
+                push(Kind::ZeroMinRows);
             }
         }
         Condition::SimilarToExamples { threshold, .. } => {
             if !(0.0..=1.0).contains(threshold) {
-                errors.push(ValidationError::ThresholdOutOfRange { index });
+                push(Kind::ThresholdOutOfRange);
             }
+        }
+        Condition::Group { conditions, .. } => {
+            // Les conditions du groupe seraient au niveau `depth + 1`.
+            if depth >= MAX_CONDITION_DEPTH {
+                push(Kind::GroupTooDeep {
+                    max_depth: MAX_CONDITION_DEPTH,
+                });
+                return;
+            }
+            if conditions.is_empty() {
+                push(Kind::EmptyGroup);
+            }
+            validate_conditions(&format!("{path}.conditions"), conditions, depth + 1, errors);
         }
     }
 }
 
-fn validate_action(index: usize, action: &Action, errors: &mut Vec<ValidationError>) {
+fn validate_action(path: &str, action: &Action, errors: &mut Vec<ValidationError>) {
+    use ValidationErrorKind as Kind;
+
+    let mut push = |kind| errors.push(ValidationError::new(path, kind));
     match action {
         Action::Rename { template } => {
             if template.literals().any(|text| text.contains(['/', '\\'])) {
-                errors.push(ValidationError::PathSeparatorInName { index });
+                push(Kind::PathSeparatorInName);
             }
         }
         Action::Move { destination, .. } | Action::Copy { destination } => {
             let destination = destination.to_string_lossy();
             if destination.is_empty() {
-                errors.push(ValidationError::EmptyDestination { index });
+                push(Kind::EmptyDestination);
             } else if !is_absolute_on_any_os(&destination) {
-                errors.push(ValidationError::RelativeDestination { index });
+                push(Kind::RelativeDestination);
             }
         }
         Action::Convert { .. } => {}
         Action::ExtractFields { fields, .. } => {
             if fields.is_empty() {
-                errors.push(ValidationError::NoFieldsToExtract { index });
+                push(Kind::NoFieldsToExtract);
             }
         }
     }
@@ -301,6 +360,11 @@ mod tests {
     use serde_json::{Value, json};
 
     use super::*;
+    use ValidationErrorKind as Kind;
+
+    fn error(path: &str, kind: ValidationErrorKind) -> ValidationError {
+        ValidationError::new(path, kind)
+    }
     use crate::trigger::{MatchMode, TriggerSource};
 
     fn documented_example() -> Value {
@@ -388,11 +452,11 @@ mod tests {
         assert_eq!(
             workflow.validate(),
             Err(vec![
-                ValidationError::EmptyName,
-                ValidationError::ZeroVersion,
-                ValidationError::UpdatedBeforeCreated,
-                ValidationError::NoConditions,
-                ValidationError::NoActions,
+                error("name", Kind::EmptyName),
+                error("version", Kind::ZeroVersion),
+                error("updated_at", Kind::UpdatedBeforeCreated),
+                error("trigger.conditions", Kind::NoConditions),
+                error("actions", Kind::NoActions),
             ])
         );
     }
@@ -416,20 +480,24 @@ mod tests {
         assert_eq!(
             workflow.validate(),
             Err(vec![
-                ValidationError::EmptySearchText { index: 0 },
-                ValidationError::EmptySearchText { index: 1 },
-                ValidationError::EmptyDateFormat { index: 2 },
-                ValidationError::NoExtensions { index: 3 },
-                ValidationError::InvalidExtension {
-                    index: 4,
-                    extension: ".png".to_owned()
-                },
-                ValidationError::InvalidExtension {
-                    index: 4,
-                    extension: String::new()
-                },
-                ValidationError::ZeroMinRows { index: 5 },
-                ValidationError::ThresholdOutOfRange { index: 6 },
+                error("trigger.conditions[0]", Kind::EmptySearchText),
+                error("trigger.conditions[1]", Kind::EmptySearchText),
+                error("trigger.conditions[2]", Kind::EmptyDateFormat),
+                error("trigger.conditions[3]", Kind::NoExtensions),
+                error(
+                    "trigger.conditions[4]",
+                    Kind::InvalidExtension {
+                        extension: ".png".to_owned()
+                    }
+                ),
+                error(
+                    "trigger.conditions[4]",
+                    Kind::InvalidExtension {
+                        extension: String::new()
+                    }
+                ),
+                error("trigger.conditions[5]", Kind::ZeroMinRows),
+                error("trigger.conditions[6]", Kind::ThresholdOutOfRange),
             ])
         );
     }
@@ -459,7 +527,10 @@ mod tests {
         }];
         assert_eq!(
             workflow.validate(),
-            Err(vec![ValidationError::ThresholdOutOfRange { index: 0 }])
+            Err(vec![error(
+                "trigger.conditions[0]",
+                Kind::ThresholdOutOfRange
+            )])
         );
     }
 
@@ -476,11 +547,11 @@ mod tests {
         assert_eq!(
             workflow.validate(),
             Err(vec![
-                ValidationError::PathSeparatorInName { index: 0 },
-                ValidationError::PathSeparatorInName { index: 1 },
-                ValidationError::EmptyDestination { index: 2 },
-                ValidationError::EmptyDestination { index: 3 },
-                ValidationError::NoFieldsToExtract { index: 4 },
+                error("actions[0]", Kind::PathSeparatorInName),
+                error("actions[1]", Kind::PathSeparatorInName),
+                error("actions[2]", Kind::EmptyDestination),
+                error("actions[3]", Kind::EmptyDestination),
+                error("actions[4]", Kind::NoFieldsToExtract),
             ])
         );
     }
@@ -506,9 +577,12 @@ mod tests {
 
         assert_eq!(
             workflow.validate(),
-            Err(vec![ValidationError::UnsupportedSchemaVersion {
-                found: CURRENT_SCHEMA_VERSION + 1
-            }])
+            Err(vec![error(
+                "schema_version",
+                Kind::UnsupportedSchemaVersion {
+                    found: CURRENT_SCHEMA_VERSION + 1
+                }
+            )])
         );
     }
 
@@ -521,9 +595,12 @@ mod tests {
         workflow.name.push('é');
         assert_eq!(
             workflow.validate(),
-            Err(vec![ValidationError::NameTooLong {
-                max: MAX_NAME_LENGTH
-            }])
+            Err(vec![error(
+                "name",
+                Kind::NameTooLong {
+                    max: MAX_NAME_LENGTH
+                }
+            )])
         );
     }
 
@@ -551,24 +628,114 @@ mod tests {
         assert_eq!(
             workflow.validate(),
             Err((0..5)
-                .map(|index| ValidationError::RelativeDestination { index })
+                .map(|index| error(&format!("actions[{index}]"), Kind::RelativeDestination))
                 .collect())
+        );
+    }
+
+    #[test]
+    fn accepts_groups_up_to_the_maximum_depth() {
+        let workflow = conditions(json!([
+            { "type": "file_extension_is", "values": ["pdf"] },
+            {
+                "type": "group",
+                "match": "any",
+                "conditions": [
+                    { "type": "file_name_contains", "value": "facture" },
+                    {
+                        "type": "group",
+                        "match": "all",
+                        "conditions": [{ "type": "content_has_field", "field": "date" }]
+                    }
+                ]
+            }
+        ]));
+        assert_eq!(workflow.validate(), Ok(()));
+    }
+
+    #[test]
+    fn locates_problems_inside_nested_groups() {
+        let workflow = conditions(json!([
+            {
+                "type": "group",
+                "match": "any",
+                "conditions": [
+                    { "type": "file_name_contains", "value": "facture" },
+                    {
+                        "type": "group",
+                        "match": "all",
+                        "conditions": [{ "type": "content_contains_text", "value": "" }]
+                    }
+                ]
+            }
+        ]));
+
+        assert_eq!(
+            workflow.validate(),
+            Err(vec![error(
+                "trigger.conditions[0].conditions[1].conditions[0]",
+                Kind::EmptySearchText
+            )])
+        );
+    }
+
+    #[test]
+    fn rejects_an_empty_group() {
+        let workflow = conditions(json!([
+            { "type": "group", "match": "all", "conditions": [] }
+        ]));
+
+        assert_eq!(
+            workflow.validate(),
+            Err(vec![error("trigger.conditions[0]", Kind::EmptyGroup)])
+        );
+    }
+
+    #[test]
+    fn rejects_groups_nested_beyond_the_maximum_depth() {
+        let workflow = conditions(json!([
+            {
+                "type": "group",
+                "match": "all",
+                "conditions": [{
+                    "type": "group",
+                    "match": "any",
+                    "conditions": [{
+                        "type": "group",
+                        "match": "all",
+                        "conditions": [{ "type": "content_contains_text", "value": "" }]
+                    }]
+                }]
+            }
+        ]));
+
+        // Le groupe trop profond est signalé seul : son contenu n'est pas validé.
+        assert_eq!(
+            workflow.validate(),
+            Err(vec![error(
+                "trigger.conditions[0].conditions[0].conditions[0]",
+                Kind::GroupTooDeep {
+                    max_depth: MAX_CONDITION_DEPTH
+                }
+            )])
         );
     }
 
     #[test]
     fn serializes_errors_with_a_code() {
         assert_eq!(
-            serde_json::to_value(ValidationError::InvalidExtension {
-                index: 2,
-                extension: ".png".to_owned(),
-            })
+            serde_json::to_value(error(
+                "trigger.conditions[2]",
+                Kind::InvalidExtension {
+                    extension: ".png".to_owned(),
+                }
+            ))
             .unwrap(),
-            json!({ "code": "invalid_extension", "index": 2, "extension": ".png" })
+            json!({ "path": "trigger.conditions[2]", "code": "invalid_extension", "extension": ".png" })
         );
         assert_eq!(
-            serde_json::to_value(ValidationError::NoActions).unwrap(),
-            json!({ "code": "no_actions" })
+            serde_json::to_value(error("actions", Kind::NoActions)).unwrap(),
+            json!({ "path": "actions", "code": "no_actions" })
         );
     }
 }

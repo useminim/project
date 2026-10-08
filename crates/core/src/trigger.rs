@@ -6,7 +6,7 @@ use crate::field::FieldName;
 use crate::id::ProfileId;
 
 /// Déclencheur d'un workflow : des conditions combinées par `all` (ET) ou
-/// `any` (OU).
+/// `any` (OU), éventuellement regroupées (voir [`Condition::Group`]).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
     /// Mode de combinaison des conditions.
@@ -87,6 +87,16 @@ pub enum Condition {
         /// Score de similarité minimal, entre 0 et 1.
         threshold: f64,
     },
+    /// Groupe de conditions combinées par leur propre mode, pour imbriquer
+    /// un `any` dans un `all` (ou l'inverse). Profondeur limitée à 3 niveaux,
+    /// celui du déclencheur compris.
+    Group {
+        /// Mode de combinaison des conditions du groupe.
+        #[serde(rename = "match")]
+        match_mode: MatchMode,
+        /// Conditions du groupe.
+        conditions: Vec<Condition>,
+    },
 }
 
 /// Catégorie d'une condition.
@@ -101,17 +111,19 @@ pub enum ConditionCategory {
 }
 
 impl Condition {
-    /// Renvoie la catégorie de la condition.
+    /// Renvoie la catégorie de la condition, ou `None` pour un groupe, qui
+    /// n'a pas de catégorie propre.
     #[must_use]
-    pub const fn category(&self) -> ConditionCategory {
+    pub const fn category(&self) -> Option<ConditionCategory> {
         match self {
             Self::FileNameContains { .. }
             | Self::FileNameMatchesDate { .. }
-            | Self::FileExtensionIs { .. } => ConditionCategory::External,
+            | Self::FileExtensionIs { .. } => Some(ConditionCategory::External),
             Self::ContentContainsText { .. }
             | Self::ContentHasField { .. }
-            | Self::ContentContainsTable { .. } => ConditionCategory::Internal,
-            Self::SimilarToExamples { .. } => ConditionCategory::Example,
+            | Self::ContentContainsTable { .. } => Some(ConditionCategory::Internal),
+            Self::SimilarToExamples { .. } => Some(ConditionCategory::Example),
+            Self::Group { .. } => None,
         }
     }
 }
@@ -172,6 +184,11 @@ mod tests {
                 "type": "similar_to_examples",
                 "profile_id": "prf_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
                 "threshold": 0.8
+            },
+            {
+                "type": "group",
+                "match": "any",
+                "conditions": [{ "type": "content_has_field", "field": "date" }]
             }
         ]);
         let parsed: Vec<Condition> = serde_json::from_value(conditions.clone()).unwrap();
@@ -180,14 +197,15 @@ mod tests {
         assert_eq!(
             parsed.iter().map(Condition::category).collect::<Vec<_>>(),
             [
-                ConditionCategory::External,
-                ConditionCategory::External,
-                ConditionCategory::External,
-                ConditionCategory::External,
-                ConditionCategory::Internal,
-                ConditionCategory::Internal,
-                ConditionCategory::Internal,
-                ConditionCategory::Example,
+                Some(ConditionCategory::External),
+                Some(ConditionCategory::External),
+                Some(ConditionCategory::External),
+                Some(ConditionCategory::External),
+                Some(ConditionCategory::Internal),
+                Some(ConditionCategory::Internal),
+                Some(ConditionCategory::Internal),
+                Some(ConditionCategory::Example),
+                None,
             ]
         );
     }
