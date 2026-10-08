@@ -5,6 +5,8 @@
 
 pub mod field;
 pub mod id;
+pub mod template;
 
 pub use field::{FieldName, FieldNameError};
 pub use id::{DocumentId, IdError, OrganizationId, ProfileId, RunId, UserId, WorkflowId};
+pub use template::{Segment, Template, TemplateError};
