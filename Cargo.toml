@@ -25,6 +25,14 @@ serde_json = "1"
 thiserror = "2"
 ulid = "3"
 
+# Logs et diagnostics
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# Tests
+tempfile = "3"
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
