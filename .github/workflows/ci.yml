@@ -38,7 +38,7 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
-      # pnpm version is read from `packageManager` in package.json.
+      # La version de pnpm est lue depuis `packageManager` dans package.json.
       - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7
@@ -46,7 +46,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      # Installs the toolchain pinned in rust-toolchain.toml.
+      # Installe la toolchain fixée dans rust-toolchain.toml.
       - name: Install Rust toolchain
         run: rustup toolchain install
 

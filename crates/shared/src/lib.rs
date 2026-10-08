@@ -1,4 +1,4 @@
-//! Types shared between the desktop app and the API (sync DTOs, entitlements).
+//! Types partagés entre l'application desktop et l'API (DTO de synchronisation, droits liés à l'offre).
 
 #[cfg(test)]
 mod tests {

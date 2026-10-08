@@ -1,4 +1,4 @@
-//! Text extraction from PDF and DOCX documents.
+//! Extraction de texte des documents PDF et DOCX.
 
 #[cfg(test)]
 mod tests {

@@ -4,10 +4,10 @@ import { defineConfig } from "vitest/config";
 // https://v2.tauri.app/start/frontend/vite/
 export default defineConfig({
   plugins: [react()],
-  // Keep Rust compiler errors visible in the terminal.
+  // Garde les erreurs du compilateur Rust visibles dans le terminal.
   clearScreen: false,
   server: {
-    // Must match `build.devUrl` in `src-tauri/tauri.conf.json`.
+    // Doit correspondre à `build.devUrl` dans `src-tauri/tauri.conf.json`.
     port: 1420,
     strictPort: true,
     watch: {

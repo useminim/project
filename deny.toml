@@ -1,7 +1,7 @@
-# cargo-deny configuration: https://embarkstudios.github.io/cargo-deny/
+# Configuration de cargo-deny : https://embarkstudios.github.io/cargo-deny/
 
 [graph]
-# Only resolve dependencies for the platforms we ship on.
+# Ne résout les dépendances que pour les plateformes distribuées.
 targets = [
   "x86_64-unknown-linux-gnu",
   "aarch64-unknown-linux-gnu",
@@ -12,16 +12,17 @@ targets = [
 ]
 
 [advisories]
-# Unmaintained crates are only reported when they are direct dependencies of
-# the workspace: transitive ones (e.g. Tauri's Linux GTK stack) are out of our
-# control.
+# Les crates non maintenues ne sont signalées que si ce sont des dépendances
+# directes du workspace : les dépendances transitives (ex. la pile GTK de Tauri
+# sous Linux) sont hors de notre contrôle.
 unmaintained = "workspace"
 ignore = []
 
 [licenses]
-# minim is proprietary software: only permissive licenses, plus MPL-2.0
-# (file-level copyleft, compatible with proprietary distribution when the
-# MPL-covered files are not modified). GPL/LGPL/AGPL are refused.
+# minim est un logiciel propriétaire : licences permissives uniquement, plus
+# MPL-2.0 (copyleft au niveau fichier, compatible avec une distribution
+# propriétaire tant que les fichiers sous MPL ne sont pas modifiés).
+# GPL/LGPL/AGPL sont refusées.
 allow = [
   "0BSD",
   "Apache-2.0",
@@ -39,18 +40,18 @@ allow = [
   "Zlib",
 ]
 confidence-threshold = 0.8
-# The allow list is a policy, not an inventory of the current tree.
+# La liste autorisée est une politique, pas un inventaire de l'arbre actuel.
 unused-allowed-license = "allow"
 
 [licenses.private]
-# Workspace crates are not published and carry no license.
+# Les crates du workspace ne sont pas publiées et n'ont pas de licence.
 ignore = true
 
 [bans]
-# Tauri's dependency tree contains many duplicated versions; tracked later.
+# L'arbre de dépendances de Tauri contient de nombreuses versions en double ; à traiter plus tard.
 multiple-versions = "allow"
 wildcards = "deny"
-# Path dependencies between workspace crates have no version requirement.
+# Les dépendances par chemin entre crates du workspace n'ont pas de contrainte de version.
 allow-wildcard-paths = true
 
 [sources]

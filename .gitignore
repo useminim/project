@@ -7,14 +7,14 @@ node_modules/
 *.tsbuildinfo
 coverage/
 
-# Build output
+# Sorties de build
 dist/
 dist-ssr/
 
-# Tauri generated files
+# Fichiers générés par Tauri
 apps/desktop/src-tauri/gen/
 
-# Environment and secrets
+# Environnement et secrets
 .env
 .env.*
 !.env.example

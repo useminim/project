@@ -1,10 +1,10 @@
-//! minim desktop application: Tauri runtime setup.
+//! Application desktop minim : mise en place du runtime Tauri.
 
-/// Builds and runs the Tauri application until the last window is closed.
+/// Construit et exécute l'application Tauri jusqu'à la fermeture de la dernière fenêtre.
 ///
-/// # Errors
+/// # Erreurs
 ///
-/// Returns an error if the Tauri runtime fails to start.
+/// Renvoie une erreur si le runtime Tauri ne parvient pas à démarrer.
 pub fn run() -> tauri::Result<()> {
     tauri::Builder::default().run(tauri::generate_context!())
 }
