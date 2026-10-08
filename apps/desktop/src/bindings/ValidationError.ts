@@ -6,7 +6,15 @@
  * Sérialisé avec un champ `code` pour que l'interface affiche un message
  * traduit ; les index de conditions et d'actions commencent à 0.
  */
-export type ValidationError = { "code": "empty_name" } | { "code": "zero_version" } | { "code": "updated_before_created" } | { "code": "no_conditions" } | { "code": "empty_search_text", 
+export type ValidationError = { "code": "unsupported_schema_version", 
+/**
+ * Version trouvée dans le workflow.
+ */
+found: number, } | { "code": "empty_name" } | { "code": "name_too_long", 
+/**
+ * Longueur maximale, en caractères.
+ */
+max: number, } | { "code": "zero_version" } | { "code": "updated_before_created" } | { "code": "no_conditions" } | { "code": "empty_search_text", 
 /**
  * Index de la condition.
  */
@@ -39,6 +47,10 @@ index: number, } | { "code": "no_actions" } | { "code": "path_separator_in_name"
  * Index de l'action.
  */
 index: number, } | { "code": "empty_destination", 
+/**
+ * Index de l'action.
+ */
+index: number, } | { "code": "relative_destination", 
 /**
  * Index de l'action.
  */

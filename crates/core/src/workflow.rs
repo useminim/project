@@ -8,9 +8,19 @@ use crate::action::Action;
 use crate::id::{OrganizationId, UserId, WorkflowId};
 use crate::trigger::{Condition, Trigger};
 
+/// Version du schéma JSON des workflows écrits par cette version de minim.
+pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
+/// Longueur maximale du nom d'un workflow, en caractères.
+pub const MAX_NAME_LENGTH: usize = 100;
+
 /// Automatisation créée par l'utilisateur.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Workflow {
+    /// Version du schéma JSON du workflow. Absente dans les workflows écrits
+    /// avant son introduction, elle vaut alors 1.
+    #[serde(default = "first_schema_version")]
+    pub schema_version: u32,
     /// Identifiant du workflow.
     pub id: WorkflowId,
     /// Nom affiché.
@@ -35,6 +45,10 @@ pub struct Workflow {
     pub updated_at: DateTime<Utc>,
 }
 
+const fn first_schema_version() -> u32 {
+    1
+}
+
 /// Propriétaire d'un workflow.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "id", rename_all = "snake_case")]
@@ -53,9 +67,21 @@ pub enum Owner {
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(tag = "code", rename_all = "snake_case")]
 pub enum ValidationError {
+    /// Le workflow a été écrit par une version plus récente de minim.
+    #[error("version de schéma {found} non prise en charge")]
+    UnsupportedSchemaVersion {
+        /// Version trouvée dans le workflow.
+        found: u32,
+    },
     /// Le nom est vide ou ne contient que des espaces.
     #[error("le nom du workflow est vide")]
     EmptyName,
+    /// Le nom dépasse la longueur maximale.
+    #[error("le nom du workflow dépasse {max} caractères")]
+    NameTooLong {
+        /// Longueur maximale, en caractères.
+        max: usize,
+    },
     /// La version vaut 0.
     #[error("la version du workflow doit être au moins 1")]
     ZeroVersion,
@@ -118,6 +144,12 @@ pub enum ValidationError {
         /// Index de l'action.
         index: usize,
     },
+    /// Le dossier de destination n'est pas un chemin absolu.
+    #[error("action {index} : le dossier de destination doit être un chemin absolu")]
+    RelativeDestination {
+        /// Index de l'action.
+        index: usize,
+    },
     /// Une extraction ne liste aucun champ.
     #[error("action {index} : aucun champ à extraire")]
     NoFieldsToExtract {
@@ -140,8 +172,17 @@ impl Workflow {
     pub fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors = Vec::new();
 
+        if self.schema_version > CURRENT_SCHEMA_VERSION {
+            errors.push(ValidationError::UnsupportedSchemaVersion {
+                found: self.schema_version,
+            });
+        }
         if self.name.trim().is_empty() {
             errors.push(ValidationError::EmptyName);
+        } else if self.name.chars().count() > MAX_NAME_LENGTH {
+            errors.push(ValidationError::NameTooLong {
+                max: MAX_NAME_LENGTH,
+            });
         }
         if self.version == 0 {
             errors.push(ValidationError::ZeroVersion);
@@ -225,8 +266,11 @@ fn validate_action(index: usize, action: &Action, errors: &mut Vec<ValidationErr
             }
         }
         Action::Move { destination, .. } | Action::Copy { destination } => {
-            if destination.as_os_str().is_empty() {
+            let destination = destination.to_string_lossy();
+            if destination.is_empty() {
                 errors.push(ValidationError::EmptyDestination { index });
+            } else if !is_absolute_on_any_os(&destination) {
+                errors.push(ValidationError::RelativeDestination { index });
             }
         }
         Action::Convert { .. } => {}
@@ -235,6 +279,20 @@ fn validate_action(index: usize, action: &Action, errors: &mut Vec<ValidationErr
                 errors.push(ValidationError::NoFieldsToExtract { index });
             }
         }
+    }
+}
+
+/// Indique si `path` est absolu sous Windows, macOS ou Linux.
+///
+/// Un workflow synchronisé peut avoir été créé sur un autre OS : la règle ne
+/// dépend donc pas de l'OS qui valide, contrairement à `Path::is_absolute`.
+/// Sont absolus `/…`, `C:\…` ou `C:/…`, et les chemins réseau `\\serveur\…`.
+fn is_absolute_on_any_os(path: &str) -> bool {
+    let mut chars = path.chars();
+    match (chars.next(), chars.next(), chars.next()) {
+        (Some('/'), _, _) | (Some('\\'), Some('\\'), Some(_)) => true,
+        (Some(drive), Some(':'), Some('\\' | '/')) => drive.is_ascii_alphabetic(),
+        _ => false,
     }
 }
 
@@ -247,6 +305,7 @@ mod tests {
 
     fn documented_example() -> Value {
         json!({
+            "schema_version": 1,
             "id": "wf_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
             "name": "Factures fournisseurs",
             "version": 3,
@@ -423,6 +482,77 @@ mod tests {
                 ValidationError::EmptyDestination { index: 3 },
                 ValidationError::NoFieldsToExtract { index: 4 },
             ])
+        );
+    }
+
+    #[test]
+    fn reads_a_workflow_without_schema_version_as_version_1() {
+        let mut value = documented_example();
+        value.as_object_mut().unwrap().remove("schema_version");
+
+        let workflow: Workflow = serde_json::from_value(value).unwrap();
+
+        assert_eq!(workflow.schema_version, 1);
+        assert_eq!(
+            serde_json::to_value(&workflow).unwrap()["schema_version"],
+            json!(1)
+        );
+    }
+
+    #[test]
+    fn rejects_a_newer_schema_version() {
+        let mut workflow = valid_workflow();
+        workflow.schema_version = CURRENT_SCHEMA_VERSION + 1;
+
+        assert_eq!(
+            workflow.validate(),
+            Err(vec![ValidationError::UnsupportedSchemaVersion {
+                found: CURRENT_SCHEMA_VERSION + 1
+            }])
+        );
+    }
+
+    #[test]
+    fn counts_the_name_length_in_characters() {
+        let mut workflow = valid_workflow();
+        workflow.name = "é".repeat(MAX_NAME_LENGTH);
+        assert_eq!(workflow.validate(), Ok(()));
+
+        workflow.name.push('é');
+        assert_eq!(
+            workflow.validate(),
+            Err(vec![ValidationError::NameTooLong {
+                max: MAX_NAME_LENGTH
+            }])
+        );
+    }
+
+    #[test]
+    fn accepts_absolute_destinations_of_every_os() {
+        let workflow = actions(json!([
+            { "type": "move", "destination": "/home/factures" },
+            { "type": "move", "destination": "C:\\Factures" },
+            { "type": "copy", "destination": "d:/archives" },
+            { "type": "copy", "destination": "\\\\serveur\\partage\\factures" }
+        ]));
+        assert_eq!(workflow.validate(), Ok(()));
+    }
+
+    #[test]
+    fn rejects_relative_destinations() {
+        let workflow = actions(json!([
+            { "type": "move", "destination": "factures" },
+            { "type": "move", "destination": "./factures" },
+            { "type": "copy", "destination": "C:factures" },
+            { "type": "copy", "destination": "\\factures" },
+            { "type": "copy", "destination": "1:\\factures" }
+        ]));
+
+        assert_eq!(
+            workflow.validate(),
+            Err((0..5)
+                .map(|index| ValidationError::RelativeDestination { index })
+                .collect())
         );
     }
 
