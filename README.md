@@ -45,7 +45,4 @@ crates/
   core/           Domaine et moteur de workflows
   extract/        Extraction de texte PDF / DOCX
   shared/         Types partagés entre le desktop et l'API
-docs/
-  DECISIONS.md    Journal des décisions
-  BACKLOG.md      Idées hors périmètre
 ```
