@@ -9,7 +9,7 @@ rust-version = "1.98"
 publish = false
 
 [workspace.dependencies]
-# Internal crates
+# Crates internes
 minim-core = { path = "crates/core" }
 minim-extract = { path = "crates/extract" }
 minim-shared = { path = "crates/shared" }
@@ -22,7 +22,7 @@ tauri-build = { version = "2", features = [] }
 unsafe_code = "forbid"
 
 [workspace.lints.clippy]
-# Allowed in tests through `clippy.toml`.
+# Autorisés dans les tests via `clippy.toml`.
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
@@ -32,6 +32,6 @@ codegen-units = 1
 lto = true
 opt-level = 3
 strip = true
-# `panic = "abort"` is deliberately not set: unwinding lets a panicking task
-# (e.g. a third-party parser on a malformed document) fail without taking down
-# the whole application.
+# `panic = "abort"` n'est volontairement pas défini : le déroulement de pile
+# permet à une tâche qui panique (ex. un parseur tiers sur un document malformé)
+# d'échouer sans arrêter toute l'application.
