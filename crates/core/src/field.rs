@@ -11,6 +11,7 @@ use thiserror::Error;
 /// La liste des champs reste ouverte : de nouveaux champs apparaissent avec les
 /// capacités d'analyse, sans changement du modèle.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(type = "string"))]
 #[serde(try_from = "String", into = "String")]
 pub struct FieldName(String);
 

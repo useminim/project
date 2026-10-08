@@ -16,6 +16,7 @@ pub const MAX_NAME_LENGTH: usize = 100;
 
 /// Automatisation créée par l'utilisateur.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct Workflow {
     /// Version du schéma JSON du workflow. Absente dans les workflows écrits
     /// avant son introduction, elle vaut alors 1.
@@ -51,6 +52,7 @@ const fn first_schema_version() -> u32 {
 
 /// Propriétaire d'un workflow.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(tag = "kind", content = "id", rename_all = "snake_case")]
 pub enum Owner {
     /// Workflow personnel.
@@ -67,7 +69,7 @@ pub enum Owner {
 /// à 0. L'interface affiche le message de la clé de traduction
 /// `validation.<code>`.
 #[derive(Debug, Clone, PartialEq, Eq, Error, Serialize)]
-#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[error("{path} : {kind}")]
 pub struct ValidationError {
     /// Chemin de l'élément concerné dans le workflow.

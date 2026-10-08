@@ -12,7 +12,8 @@
     "test": "pnpm run test:js && pnpm run test:rust",
     "test:js": "pnpm -r --if-present test",
     "test:rust": "cargo test --workspace --locked",
-    "lint": "pnpm run lint:js && pnpm run lint:rust",
+    "lint": "pnpm run lint:bindings && pnpm run lint:js && pnpm run lint:rust",
+    "lint:bindings": "node scripts/check-bindings.mjs",
     "lint:js": "biome check && pnpm -r --if-present typecheck",
     "lint:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings",
     "format": "biome check --write && cargo fmt --all"

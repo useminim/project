@@ -19,7 +19,9 @@ serde_json.workspace = true
 
 [features]
 # Dérive les types TypeScript (ts-rs) des types échangés avec l'interface.
-ts = ["dep:ts-rs"]
+# `no-serde-warnings` : ts-rs ne lit pas `serde(try_from, into)`, utilisés par
+# les types déjà exportés en `string` (identifiants, `FieldName`, `Template`).
+ts = ["dep:ts-rs", "ts-rs/chrono-impl", "ts-rs/no-serde-warnings"]
 
 [lints]
 workspace = true

@@ -17,6 +17,7 @@ use crate::field::FieldName;
 /// Sérialisé sous forme de texte source ; la désérialisation refuse un modèle
 /// invalide.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(type = "string"))]
 #[serde(try_from = "String", into = "String")]
 pub struct Template {
     source: String,

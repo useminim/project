@@ -10,6 +10,7 @@ use crate::id::DocumentId;
 
 /// Résultat de l'analyse d'un document.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct DocumentProfile {
     /// Document analysé.
     pub document_id: DocumentId,
@@ -27,17 +28,20 @@ pub struct DocumentProfile {
 
 /// Propriétés du fichier d'un document.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 pub struct FileInfo {
     /// Nom du fichier, extension comprise.
     pub name: String,
     /// Extension, sans le point.
     pub extension: String,
     /// Taille en octets.
+    #[cfg_attr(feature = "ts", ts(type = "number"))]
     pub size: u64,
 }
 
 /// Origine du texte d'un document.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum TextSource {
     /// Texte extrait directement du fichier.
@@ -48,11 +52,13 @@ pub enum TextSource {
 
 /// Valeur d'un champ détecté dans un document.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 pub struct DetectedField {
     /// Valeur lue dans le document.
     pub value: String,
     /// Devise, pour un montant (code ISO 4217 : `EUR`…).
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub currency: Option<String>,
     /// Confiance de la détection, entre 0 et 1.
     pub confidence: f64,

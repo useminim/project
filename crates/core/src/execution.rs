@@ -9,6 +9,7 @@ use crate::id::{DocumentId, RunId, WorkflowId};
 
 /// Entrée du journal pour une exécution de workflow sur un document.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct ExecutionLog {
     /// Identifiant de l'exécution.
     pub id: RunId,
@@ -30,6 +31,7 @@ pub struct ExecutionLog {
 
 /// Résultat global d'une exécution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum ExecutionStatus {
     /// Toutes les actions ont réussi.
@@ -42,6 +44,7 @@ pub enum ExecutionStatus {
 
 /// Trace d'une action au sein d'une exécution.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 pub struct ActionRecord {
     /// Type de l'action.
     #[serde(rename = "type")]
@@ -49,11 +52,13 @@ pub struct ActionRecord {
     /// Résultat de l'action.
     pub status: ActionStatus,
     /// Durée de l'action en millisecondes.
+    #[cfg_attr(feature = "ts", ts(type = "number"))]
     pub duration_ms: u64,
 }
 
 /// Résultat d'une action.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum ActionStatus {
     /// L'action a réussi.

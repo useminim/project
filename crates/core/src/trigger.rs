@@ -8,6 +8,7 @@ use crate::id::ProfileId;
 /// Déclencheur d'un workflow : des conditions combinées par `all` (ET) ou
 /// `any` (OU), éventuellement regroupées (voir [`Condition::Group`]).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 pub struct Trigger {
     /// Mode de combinaison des conditions.
     #[serde(rename = "match")]
@@ -20,6 +21,7 @@ pub struct Trigger {
 
 /// Mode de combinaison des conditions d'un déclencheur.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum MatchMode {
     /// Toutes les conditions doivent être remplies (ET).
@@ -30,6 +32,7 @@ pub enum MatchMode {
 
 /// Origine d'un déclencheur.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum TriggerSource {
     /// Choisi par l'utilisateur dans le wizard.
@@ -40,6 +43,7 @@ pub enum TriggerSource {
 
 /// Condition élémentaire d'un déclencheur.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Condition {
     /// Le nom du fichier contient un texte.
@@ -54,6 +58,7 @@ pub enum Condition {
     FileNameMatchesDate {
         /// Format de date attendu ; toute date reconnue convient s'il est absent.
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(feature = "ts", ts(optional))]
         format: Option<String>,
     },
     /// L'extension du fichier fait partie d'une liste.
@@ -78,6 +83,7 @@ pub enum Condition {
     ContentContainsTable {
         /// Nombre minimal de lignes du tableau.
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(feature = "ts", ts(optional))]
         min_rows: Option<u32>,
     },
     /// Le document ressemble aux documents exemples d'un profil appris.
@@ -130,6 +136,7 @@ impl Condition {
 
 /// Résultat de l'évaluation d'un déclencheur sur un profil de document.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(rename_all = "snake_case")]
 pub enum MatchResult {
     /// Le document correspond : le workflow s'exécute.

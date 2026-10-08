@@ -31,6 +31,7 @@ macro_rules! prefixed_id {
     ($(#[$meta:meta])* $name:ident, $prefix:literal) => {
         $(#[$meta])*
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(type = "string"))]
         pub struct $name(Ulid);
 
         impl $name {
