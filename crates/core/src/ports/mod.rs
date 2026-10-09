@@ -6,6 +6,7 @@
 
 pub mod ocr;
 pub mod reader;
+pub mod store;
 pub mod time;
 
 pub use ocr::{Language, OcrEngine, OcrError, PageImage};
@@ -13,6 +14,7 @@ pub use reader::{
     DocumentKind, DocumentMetadata, DocumentReader, Page, PageText, RawDocument, ReadError, Rect,
     TextSpan,
 };
+pub use store::{ExecutionLogRepository, StoreError, WaitingZoneRepository, WorkflowRepository};
 pub use time::{Clock, IdGenerator, SystemClock, UlidGenerator};
 
 #[cfg(test)]
@@ -29,6 +31,9 @@ mod tests {
     fn every_port_is_object_safe_and_shareable() {
         assert_shareable::<Arc<dyn DocumentReader>>();
         assert_shareable::<Arc<dyn OcrEngine>>();
+        assert_shareable::<Arc<dyn WorkflowRepository>>();
+        assert_shareable::<Arc<dyn ExecutionLogRepository>>();
+        assert_shareable::<Arc<dyn WaitingZoneRepository>>();
         assert_shareable::<Arc<dyn Clock>>();
         assert_shareable::<Arc<dyn IdGenerator>>();
     }
