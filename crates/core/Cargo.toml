@@ -22,6 +22,8 @@ serde_json.workspace = true
 # `no-serde-warnings` : ts-rs ne lit pas `serde(try_from, into)`, utilisés par
 # les types déjà exportés en `string` (identifiants, `FieldName`, `Template`).
 ts = ["dep:ts-rs", "ts-rs/chrono-impl", "ts-rs/no-serde-warnings"]
+# Doubles de test des ports et tests de contrat (module `testing`).
+test-support = []
 
 [lints]
 workspace = true

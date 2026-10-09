@@ -11,6 +11,8 @@ pub mod ports;
 pub mod profile;
 pub mod redacted;
 pub mod template;
+#[cfg(any(test, feature = "test-support"))]
+pub mod testing;
 pub mod trigger;
 pub mod waiting_zone;
 pub mod workflow;
