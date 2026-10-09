@@ -9,6 +9,7 @@ use crate::template::Template;
 
 /// Opération appliquée au document par un workflow.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Action {
     /// Renomme le fichier à partir d'un modèle.
@@ -45,6 +46,7 @@ pub enum Action {
 
 /// Type d'une action, sans ses paramètres. Utilisé dans le journal d'exécution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum ActionKind {
     /// Voir [`Action::Rename`].
@@ -61,6 +63,7 @@ pub enum ActionKind {
 
 /// Format cible d'une conversion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum ConvertFormat {
     /// Document PDF.
@@ -71,6 +74,7 @@ pub enum ConvertFormat {
 
 /// Format du fichier produit par une extraction de champs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum ExportFormat {
     /// Fichier CSV.
@@ -101,7 +105,8 @@ mod tests {
 
     #[test]
     fn reads_the_documented_example() {
-        let value = json!({ "type": "rename", "template": "{client_name}_{date:YYYY-MM-DD}.pdf" });
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/action.json")).unwrap();
         let action: Action = serde_json::from_value(value.clone()).unwrap();
 
         assert_eq!(action.kind(), ActionKind::Rename);

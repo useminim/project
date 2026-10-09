@@ -164,6 +164,7 @@ impl From<io::Error> for CommandError {
 
 #[cfg(test)]
 mod tests {
+    use minim_core::ValidationErrorKind;
     use serde_json::{Value, json};
 
     use super::*;
@@ -183,8 +184,11 @@ mod tests {
     #[test]
     fn serializes_validation_issues() {
         let error = CommandError::from(vec![
-            ValidationError::EmptyName,
-            ValidationError::EmptySearchText { index: 1 },
+            ValidationError::new("name", ValidationErrorKind::EmptyName),
+            ValidationError::new(
+                "trigger.conditions[1]",
+                ValidationErrorKind::EmptySearchText,
+            ),
         ]);
 
         assert_eq!(
@@ -195,8 +199,8 @@ mod tests {
                 "details": {
                     "kind": "validation",
                     "issues": [
-                        { "code": "empty_name" },
-                        { "code": "empty_search_text", "index": 1 }
+                        { "path": "name", "code": "empty_name" },
+                        { "path": "trigger.conditions[1]", "code": "empty_search_text" }
                     ]
                 }
             })

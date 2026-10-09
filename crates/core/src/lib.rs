@@ -21,4 +21,7 @@ pub use profile::{DetectedField, DocumentProfile, FileInfo, TextSource};
 pub use redacted::{REDACTED, Redacted};
 pub use template::{Segment, Template, TemplateError};
 pub use trigger::{Condition, ConditionCategory, MatchMode, MatchResult, Trigger, TriggerSource};
-pub use workflow::{Owner, ValidationError, Workflow};
+pub use workflow::{
+    CURRENT_SCHEMA_VERSION, MAX_CONDITION_DEPTH, MAX_NAME_LENGTH, Owner, ValidationError,
+    ValidationErrorKind, Workflow,
+};

@@ -6,8 +6,9 @@ use crate::field::FieldName;
 use crate::id::ProfileId;
 
 /// Déclencheur d'un workflow : des conditions combinées par `all` (ET) ou
-/// `any` (OU).
+/// `any` (OU), éventuellement regroupées (voir [`Condition::Group`]).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 pub struct Trigger {
     /// Mode de combinaison des conditions.
     #[serde(rename = "match")]
@@ -20,6 +21,7 @@ pub struct Trigger {
 
 /// Mode de combinaison des conditions d'un déclencheur.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum MatchMode {
     /// Toutes les conditions doivent être remplies (ET).
@@ -30,6 +32,7 @@ pub enum MatchMode {
 
 /// Origine d'un déclencheur.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum TriggerSource {
     /// Choisi par l'utilisateur dans le wizard.
@@ -40,6 +43,7 @@ pub enum TriggerSource {
 
 /// Condition élémentaire d'un déclencheur.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Condition {
     /// Le nom du fichier contient un texte.
@@ -54,6 +58,7 @@ pub enum Condition {
     FileNameMatchesDate {
         /// Format de date attendu ; toute date reconnue convient s'il est absent.
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(feature = "ts", ts(optional))]
         format: Option<String>,
     },
     /// L'extension du fichier fait partie d'une liste.
@@ -78,6 +83,7 @@ pub enum Condition {
     ContentContainsTable {
         /// Nombre minimal de lignes du tableau.
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(feature = "ts", ts(optional))]
         min_rows: Option<u32>,
     },
     /// Le document ressemble aux documents exemples d'un profil appris.
@@ -86,6 +92,16 @@ pub enum Condition {
         profile_id: ProfileId,
         /// Score de similarité minimal, entre 0 et 1.
         threshold: f64,
+    },
+    /// Groupe de conditions combinées par leur propre mode, pour imbriquer
+    /// un `any` dans un `all` (ou l'inverse). Profondeur limitée à 3 niveaux,
+    /// celui du déclencheur compris.
+    Group {
+        /// Mode de combinaison des conditions du groupe.
+        #[serde(rename = "match")]
+        match_mode: MatchMode,
+        /// Conditions du groupe.
+        conditions: Vec<Condition>,
     },
 }
 
@@ -101,23 +117,26 @@ pub enum ConditionCategory {
 }
 
 impl Condition {
-    /// Renvoie la catégorie de la condition.
+    /// Renvoie la catégorie de la condition, ou `None` pour un groupe, qui
+    /// n'a pas de catégorie propre.
     #[must_use]
-    pub const fn category(&self) -> ConditionCategory {
+    pub const fn category(&self) -> Option<ConditionCategory> {
         match self {
             Self::FileNameContains { .. }
             | Self::FileNameMatchesDate { .. }
-            | Self::FileExtensionIs { .. } => ConditionCategory::External,
+            | Self::FileExtensionIs { .. } => Some(ConditionCategory::External),
             Self::ContentContainsText { .. }
             | Self::ContentHasField { .. }
-            | Self::ContentContainsTable { .. } => ConditionCategory::Internal,
-            Self::SimilarToExamples { .. } => ConditionCategory::Example,
+            | Self::ContentContainsTable { .. } => Some(ConditionCategory::Internal),
+            Self::SimilarToExamples { .. } => Some(ConditionCategory::Example),
+            Self::Group { .. } => None,
         }
     }
 }
 
 /// Résultat de l'évaluation d'un déclencheur sur un profil de document.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(rename_all = "snake_case")]
 pub enum MatchResult {
     /// Le document correspond : le workflow s'exécute.
@@ -136,15 +155,8 @@ mod tests {
 
     #[test]
     fn reads_the_documented_example() {
-        let value = json!({
-            "match": "all",
-            "conditions": [
-                { "type": "file_name_contains", "value": "facture", "case_sensitive": false },
-                { "type": "content_has_field", "field": "invoice_total" },
-                { "type": "content_contains_table" }
-            ],
-            "source": "manual"
-        });
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/trigger.json")).unwrap();
         let trigger: Trigger = serde_json::from_value(value.clone()).unwrap();
 
         assert_eq!(trigger.match_mode, MatchMode::All);
@@ -172,6 +184,11 @@ mod tests {
                 "type": "similar_to_examples",
                 "profile_id": "prf_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
                 "threshold": 0.8
+            },
+            {
+                "type": "group",
+                "match": "any",
+                "conditions": [{ "type": "content_has_field", "field": "date" }]
             }
         ]);
         let parsed: Vec<Condition> = serde_json::from_value(conditions.clone()).unwrap();
@@ -180,14 +197,15 @@ mod tests {
         assert_eq!(
             parsed.iter().map(Condition::category).collect::<Vec<_>>(),
             [
-                ConditionCategory::External,
-                ConditionCategory::External,
-                ConditionCategory::External,
-                ConditionCategory::External,
-                ConditionCategory::Internal,
-                ConditionCategory::Internal,
-                ConditionCategory::Internal,
-                ConditionCategory::Example,
+                Some(ConditionCategory::External),
+                Some(ConditionCategory::External),
+                Some(ConditionCategory::External),
+                Some(ConditionCategory::External),
+                Some(ConditionCategory::Internal),
+                Some(ConditionCategory::Internal),
+                Some(ConditionCategory::Internal),
+                Some(ConditionCategory::Example),
+                None,
             ]
         );
     }

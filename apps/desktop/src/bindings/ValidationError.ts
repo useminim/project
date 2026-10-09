@@ -3,47 +3,30 @@
 /**
  * Problème qui empêche d'enregistrer ou d'exécuter un workflow.
  *
- * Sérialisé avec un champ `code` pour que l'interface affiche un message
- * traduit ; les index de conditions et d'actions commencent à 0.
+ * Sérialisé à plat : `{ "path": "actions[2]", "code": "empty_destination" }`.
+ * Le chemin désigne l'élément concerné (`name`, `trigger.conditions[1]`,
+ * `trigger.conditions[1].conditions[0]`, `actions[2]`…), les index commençant
+ * à 0. L'interface affiche le message de la clé de traduction
+ * `validation.<code>`.
  */
-export type ValidationError = { "code": "empty_name" } | { "code": "zero_version" } | { "code": "updated_before_created" } | { "code": "no_conditions" } | { "code": "empty_search_text", 
+export type ValidationError = { 
 /**
- * Index de la condition.
+ * Chemin de l'élément concerné dans le workflow.
  */
-index: number, } | { "code": "empty_date_format", 
+path: string, } & ({ "code": "unsupported_schema_version", 
 /**
- * Index de la condition.
+ * Version trouvée dans le workflow.
  */
-index: number, } | { "code": "no_extensions", 
+found: number, } | { "code": "empty_name" } | { "code": "name_too_long", 
 /**
- * Index de la condition.
+ * Longueur maximale, en caractères.
  */
-index: number, } | { "code": "invalid_extension", 
+max: number, } | { "code": "zero_version" } | { "code": "updated_before_created" } | { "code": "no_conditions" } | { "code": "empty_group" } | { "code": "group_too_deep", 
 /**
- * Index de la condition.
+ * Profondeur maximale, niveau du déclencheur compris.
  */
-index: number, 
+max_depth: number, } | { "code": "empty_search_text" } | { "code": "empty_date_format" } | { "code": "no_extensions" } | { "code": "invalid_extension", 
 /**
  * Extension refusée.
  */
-extension: string, } | { "code": "zero_min_rows", 
-/**
- * Index de la condition.
- */
-index: number, } | { "code": "threshold_out_of_range", 
-/**
- * Index de la condition.
- */
-index: number, } | { "code": "no_actions" } | { "code": "path_separator_in_name", 
-/**
- * Index de l'action.
- */
-index: number, } | { "code": "empty_destination", 
-/**
- * Index de l'action.
- */
-index: number, } | { "code": "no_fields_to_extract", 
-/**
- * Index de l'action.
- */
-index: number, };
+extension: string, } | { "code": "zero_min_rows" } | { "code": "threshold_out_of_range" } | { "code": "no_actions" } | { "code": "path_separator_in_name" } | { "code": "empty_destination" } | { "code": "relative_destination" } | { "code": "no_fields_to_extract" });

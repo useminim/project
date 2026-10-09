@@ -9,6 +9,7 @@ use crate::id::{DocumentId, RunId, WorkflowId};
 
 /// Entrée du journal pour une exécution de workflow sur un document.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct ExecutionLog {
     /// Identifiant de l'exécution.
     pub id: RunId,
@@ -30,6 +31,7 @@ pub struct ExecutionLog {
 
 /// Résultat global d'une exécution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum ExecutionStatus {
     /// Toutes les actions ont réussi.
@@ -42,6 +44,7 @@ pub enum ExecutionStatus {
 
 /// Trace d'une action au sein d'une exécution.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 pub struct ActionRecord {
     /// Type de l'action.
     #[serde(rename = "type")]
@@ -49,11 +52,13 @@ pub struct ActionRecord {
     /// Résultat de l'action.
     pub status: ActionStatus,
     /// Durée de l'action en millisecondes.
+    #[cfg_attr(feature = "ts", ts(type = "number"))]
     pub duration_ms: u64,
 }
 
 /// Résultat d'une action.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
 pub enum ActionStatus {
     /// L'action a réussi.
@@ -70,16 +75,8 @@ mod tests {
 
     #[test]
     fn reads_the_documented_example() {
-        let value = json!({
-            "id": "run_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
-            "document_id": "doc_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
-            "workflow_id": "wf_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
-            "workflow_version": 3,
-            "status": "success",
-            "actions": [ { "type": "rename", "status": "success", "duration_ms": 4 } ],
-            "error": null,
-            "started_at": "2026-09-30T10:05:00Z"
-        });
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/execution_log.json")).unwrap();
         let log: ExecutionLog = serde_json::from_value(value.clone()).unwrap();
 
         assert_eq!(log.status, ExecutionStatus::Success);
