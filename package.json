@@ -15,7 +15,7 @@
     "lint": "pnpm run lint:bindings && pnpm run lint:js && pnpm run lint:rust",
     "lint:bindings": "node scripts/check-bindings.mjs",
     "lint:js": "biome check && pnpm -r --if-present typecheck",
-    "lint:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "lint:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
     "format": "biome check --write && cargo fmt --all"
   },
   "devDependencies": {
