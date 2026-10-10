@@ -1,0 +1,7 @@
+{
+  "title": "Historique",
+  "empty": {
+    "title": "Aucune exécution",
+    "description": "Chaque document traité par un workflow sera consigné ici."
+  }
+}

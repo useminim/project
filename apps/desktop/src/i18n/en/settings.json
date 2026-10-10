@@ -1,0 +1,7 @@
+{
+  "title": "Settings",
+  "empty": {
+    "title": "No settings available",
+    "description": "Application settings will appear here."
+  }
+}

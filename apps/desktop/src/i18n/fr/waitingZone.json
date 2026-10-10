@@ -1,0 +1,7 @@
+{
+  "title": "Zone d'attente",
+  "empty": {
+    "title": "Aucun document en attente",
+    "description": "Les documents qu'aucun workflow ne reconnaît avec certitude apparaîtront ici."
+  }
+}

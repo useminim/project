@@ -1,0 +1,6 @@
+{
+  "validation_failed": "Some information is invalid.",
+  "not_found": "The requested item could not be found.",
+  "io": "A file could not be read or written.",
+  "internal": "An unexpected error occurred."
+}
