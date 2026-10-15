@@ -1,0 +1,13 @@
+{
+  "appName": "minim",
+  "loading": "Loading…",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "close": "Close",
+  "notifications": "Notifications",
+  "crash": {
+    "title": "An unexpected error occurred",
+    "description": "The interface needs to be reloaded. Your workflows and documents are not affected.",
+    "reload": "Reload"
+  }
+}

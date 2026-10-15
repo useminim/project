@@ -1,0 +1,13 @@
+{
+  "appName": "minim",
+  "loading": "Chargement…",
+  "cancel": "Annuler",
+  "confirm": "Confirmer",
+  "close": "Fermer",
+  "notifications": "Notifications",
+  "crash": {
+    "title": "Une erreur inattendue est survenue",
+    "description": "L'interface doit être rechargée. Vos workflows et vos documents ne sont pas touchés.",
+    "reload": "Recharger"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "title": "History",
+  "empty": {
+    "title": "No runs",
+    "description": "Every document processed by a workflow will be recorded here."
+  }
+}

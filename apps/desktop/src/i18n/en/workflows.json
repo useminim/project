@@ -1,0 +1,7 @@
+{
+  "title": "Workflows",
+  "empty": {
+    "title": "No workflows yet",
+    "description": "A workflow recognizes a type of document and applies actions to it: rename, move, convert…"
+  }
+}
