@@ -49,6 +49,10 @@ ts-rs = "12"
 proptest = "1"
 tempfile = "3"
 
+# Correspondance des déclencheurs
+regex = "1"
+unicode-normalization = "0.1"
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 

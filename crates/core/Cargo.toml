@@ -8,10 +8,12 @@ publish.workspace = true
 
 [dependencies]
 chrono.workspace = true
+regex.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 ts-rs = { workspace = true, optional = true }
 ulid.workspace = true
+unicode-normalization.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
