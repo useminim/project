@@ -25,7 +25,7 @@ max: number, } | { "code": "zero_version" } | { "code": "updated_before_created"
 /**
  * Profondeur maximale, niveau du déclencheur compris.
  */
-max_depth: number, } | { "code": "empty_search_text" } | { "code": "empty_date_format" } | { "code": "no_extensions" } | { "code": "invalid_extension", 
+max_depth: number, } | { "code": "empty_search_text" } | { "code": "empty_date_format" } | { "code": "invalid_date_format" } | { "code": "no_extensions" } | { "code": "invalid_extension", 
 /**
  * Extension refusée.
  */
