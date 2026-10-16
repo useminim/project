@@ -6,6 +6,7 @@ import enErrors from "./en/errors.json";
 import enHistory from "./en/history.json";
 import enNavigation from "./en/navigation.json";
 import enSettings from "./en/settings.json";
+import enStorage from "./en/storage.json";
 import enWaitingZone from "./en/waitingZone.json";
 import enWorkflows from "./en/workflows.json";
 import frCommon from "./fr/common.json";
@@ -13,6 +14,7 @@ import frErrors from "./fr/errors.json";
 import frHistory from "./fr/history.json";
 import frNavigation from "./fr/navigation.json";
 import frSettings from "./fr/settings.json";
+import frStorage from "./fr/storage.json";
 import frWaitingZone from "./fr/waitingZone.json";
 import frWorkflows from "./fr/workflows.json";
 
@@ -22,6 +24,7 @@ export const fr = {
   history: frHistory,
   navigation: frNavigation,
   settings: frSettings,
+  storage: frStorage,
   waitingZone: frWaitingZone,
   workflows: frWorkflows,
 };
@@ -35,6 +38,7 @@ export const en: SameKeys<typeof fr> = {
   history: enHistory,
   navigation: enNavigation,
   settings: enSettings,
+  storage: enStorage,
   waitingZone: enWaitingZone,
   workflows: enWorkflows,
 };

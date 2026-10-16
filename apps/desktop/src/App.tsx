@@ -2,6 +2,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Toaster } from "./components/Toaster";
 import { SectionView } from "./shell/SectionView";
 import { Sidebar } from "./shell/Sidebar";
+import { StorageBanner } from "./shell/StorageBanner";
 import { useUiStore } from "./state/ui";
 
 export function App() {
@@ -12,6 +13,7 @@ export function App() {
       <div className="shell">
         <Sidebar />
         <main className="shell__content">
+          <StorageBanner />
           <SectionView section={section} />
         </main>
       </div>
