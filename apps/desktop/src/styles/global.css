@@ -132,6 +132,26 @@ p {
   background: var(--color-surface);
 }
 
+.banner--dismissible {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.banner__message {
+  flex: 1;
+}
+
+.banner__close {
+  border: none;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-large);
+  line-height: 1;
+  cursor: pointer;
+}
+
 .banner--warning {
   border-left-color: var(--color-primary);
 }

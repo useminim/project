@@ -1,5 +1,6 @@
 {
   "unavailable": "Local storage could not be opened: the system keychain denies access to the key. Your data has not been changed. Unlock the keychain, then restart minim.",
+  "dismissReducedProtection": "Hide this message",
   "reducedProtection": "Reduced protection: no keychain is available on this system, so the key to your data is kept in a file protected only by your account's permissions.",
   "recovered": {
     "key_lost": "The key to your local data was lost (reinstallation or new profile). The old database was set aside and a new one was created.",
