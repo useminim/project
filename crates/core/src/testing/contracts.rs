@@ -19,9 +19,11 @@ use std::path::PathBuf;
 use crate::document::{Document, DocumentStatus};
 use crate::execution::{ExecutionLog, ExecutionStatus};
 use crate::ports::{
-    DocumentRepository, ExecutionLogQuery, ExecutionLogRepository, StoreError, WorkflowRepository,
+    DocumentRepository, ExecutionLogQuery, ExecutionLogRepository, StoreError,
+    WaitingZoneRepository, WorkflowRepository,
 };
 use crate::testing::samples;
+use crate::waiting_zone::WaitingReason;
 use crate::workflow::Workflow;
 
 fn ids(workflows: &[Workflow]) -> Vec<String> {
@@ -361,4 +363,51 @@ pub fn document_repository_contract(repo: &dyn DocumentRepository) {
         repo.list_by_status(DocumentStatus::Pending).unwrap(),
         [reprocessed, second, same_time]
     );
+}
+
+/// Vérifie le contrat de [`WaitingZoneRepository`] sur un dépôt vide.
+///
+/// # Panics
+///
+/// Échoue dès qu'une règle du contrat n'est pas respectée.
+pub fn waiting_zone_repository_contract(repo: &dyn WaitingZoneRepository) {
+    assert_eq!(
+        repo.list().unwrap(),
+        [],
+        "une zone d'attente neuve est vide"
+    );
+    assert!(!repo.remove(samples::document_id(1)).unwrap());
+
+    let late = samples::waiting_entry(samples::document_id(1), samples::date(5));
+    let early = samples::waiting_entry(samples::document_id(2), samples::date(0));
+    // Entré en même temps que `late` : départagé par l'identifiant.
+    let mut same_time = samples::waiting_entry(samples::document_id(3), samples::date(5));
+    same_time.reason = WaitingReason::ActionFailed {
+        workflow_id: samples::workflow_id(1),
+        run_id: samples::run_id(1),
+    };
+    for entry in [&same_time, &late, &early] {
+        repo.put(entry).unwrap();
+    }
+    assert_eq!(
+        repo.list().unwrap(),
+        [early.clone(), late.clone(), same_time.clone()],
+        "list renvoie les documents par date d'entrée puis par identifiant"
+    );
+
+    // Une nouvelle entrée pour le même document remplace l'ancienne.
+    let mut retried = early.clone();
+    retried.reason = WaitingReason::Uncertain {
+        candidates: vec![samples::workflow_id(1), samples::workflow_id(2)],
+    };
+    retried.entered_at = samples::date(10);
+    repo.put(&retried).unwrap();
+    assert_eq!(
+        repo.list().unwrap(),
+        [late.clone(), same_time.clone(), retried.clone()]
+    );
+
+    assert!(repo.remove(late.document_id).unwrap());
+    assert!(!repo.remove(late.document_id).unwrap());
+    assert_eq!(repo.list().unwrap(), [same_time, retried]);
 }

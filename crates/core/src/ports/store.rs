@@ -243,7 +243,7 @@ pub trait DocumentRepository: Send + Sync {
     fn list_by_status(&self, status: DocumentStatus) -> Result<Vec<Document>, StoreError>;
 }
 
-/// Documents en zone d'attente. Implémenté avec la zone d'attente (prompt 23).
+/// Documents en zone d'attente.
 pub trait WaitingZoneRepository: Send + Sync {
     /// Place un document en zone d'attente, ou remplace son entrée.
     ///
@@ -252,7 +252,8 @@ pub trait WaitingZoneRepository: Send + Sync {
     /// Renvoie une erreur si le stockage échoue.
     fn put(&self, entry: &WaitingEntry) -> Result<(), StoreError>;
 
-    /// Renvoie les documents en attente, du plus ancien au plus récent.
+    /// Renvoie les documents en attente, du plus ancien au plus récent (date
+    /// d'entrée, puis identifiant du document).
     ///
     /// # Erreurs
     ///

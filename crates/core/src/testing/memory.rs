@@ -10,8 +10,9 @@ use crate::execution::ExecutionLog;
 use crate::id::{DocumentId, RunId, WorkflowId};
 use crate::ports::{
     DocumentRepository, ExecutionLogQuery, ExecutionLogRepository, PRIORITY_STEP, StoreError,
-    WorkflowRepository,
+    WaitingZoneRepository, WorkflowRepository,
 };
+use crate::waiting_zone::WaitingEntry;
 use crate::workflow::Workflow;
 
 /// Verrouille sans échouer : un test qui a paniqué en tenant le verrou ne
@@ -238,6 +239,29 @@ impl DocumentRepository for InMemoryDocumentRepository {
     }
 }
 
+/// [`WaitingZoneRepository`] en mémoire.
+#[derive(Debug, Default)]
+pub struct InMemoryWaitingZoneRepository {
+    entries: Mutex<BTreeMap<DocumentId, WaitingEntry>>,
+}
+
+impl WaitingZoneRepository for InMemoryWaitingZoneRepository {
+    fn put(&self, entry: &WaitingEntry) -> Result<(), StoreError> {
+        lock(&self.entries).insert(entry.document_id, entry.clone());
+        Ok(())
+    }
+
+    fn list(&self) -> Result<Vec<WaitingEntry>, StoreError> {
+        let mut entries: Vec<_> = lock(&self.entries).values().cloned().collect();
+        entries.sort_by_key(|entry| (entry.entered_at, entry.document_id));
+        Ok(entries)
+    }
+
+    fn remove(&self, document_id: DocumentId) -> Result<bool, StoreError> {
+        Ok(lock(&self.entries).remove(&document_id).is_some())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -256,5 +280,10 @@ mod tests {
     #[test]
     fn document_repository_passes_the_contract() {
         contracts::document_repository_contract(&InMemoryDocumentRepository::default());
+    }
+
+    #[test]
+    fn waiting_zone_repository_passes_the_contract() {
+        contracts::waiting_zone_repository_contract(&InMemoryWaitingZoneRepository::default());
     }
 }

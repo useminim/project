@@ -7,7 +7,9 @@
     reason = "fichier de tests : clippy.toml n'autorise unwrap que dans les fonctions #[test]"
 )]
 
-use minim_core::{Action, Document, DocumentProfile, ExecutionLog, Trigger, Workflow};
+use minim_core::{
+    Action, Document, DocumentProfile, ExecutionLog, Trigger, WaitingEntry, Workflow,
+};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -52,6 +54,11 @@ fn execution_log() {
 #[test]
 fn document() {
     assert_round_trip::<Document>(include_str!("fixtures/document.json"));
+}
+
+#[test]
+fn waiting_entry() {
+    assert_round_trip::<WaitingEntry>(include_str!("fixtures/waiting_entry.json"));
 }
 
 #[test]

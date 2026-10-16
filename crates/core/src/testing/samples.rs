@@ -17,6 +17,7 @@ use crate::id::{DocumentId, RunId, UserId, WorkflowId};
 use crate::ports::DocumentKind;
 use crate::template::Template;
 use crate::trigger::{Condition, MatchMode, Trigger, TriggerSource};
+use crate::waiting_zone::{WaitingEntry, WaitingReason};
 use crate::workflow::{CURRENT_SCHEMA_VERSION, Owner, Workflow};
 
 /// Date de référence des tests (1er octobre 2026, 10 h UTC), décalée de
@@ -65,6 +66,17 @@ pub fn document(id: DocumentId, n: u8) -> Document {
         origin: DocumentOrigin::Manual,
         received_at: date(i64::from(n)),
         status: DocumentStatus::Pending,
+    }
+}
+
+/// Document sans workflow correspondant, entré en zone d'attente à
+/// `entered_at`.
+#[must_use]
+pub const fn waiting_entry(document_id: DocumentId, entered_at: DateTime<Utc>) -> WaitingEntry {
+    WaitingEntry {
+        document_id,
+        reason: WaitingReason::NoMatch,
+        entered_at,
     }
 }
 
