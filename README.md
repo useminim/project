@@ -23,6 +23,8 @@ Dépendances système de Tauri ([documentation](https://v2.tauri.app/start/prere
 - **macOS** : Xcode Command Line Tools (`xcode-select --install`).
 - **Windows** : [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (charge de travail « Développement desktop en C++ ») et WebView2 (préinstallé sur Windows 10 et 11).
 
+Chiffrement de la base locale : OpenSSL est compilé depuis les sources, ce qui demande **Perl**. Il est présent par défaut sous macOS et Linux ; sous Windows, installer [Strawberry Perl](https://strawberryperl.com/) (`winget install StrawberryPerl.StrawberryPerl`), et non le Perl de Git ou de MSYS. [NASM](https://www.nasm.us/) est facultatif : sans lui, OpenSSL est compilé sans optimisations assembleur. Le premier build est plus long ; les suivants utilisent le cache de Cargo.
+
 ## Commandes
 
 | Commande | Description |
@@ -45,4 +47,9 @@ crates/
   core/           Domaine et moteur de workflows
   extract/        Extraction de texte PDF / DOCX
   shared/         Types partagés entre le desktop et l'API
+  store/          Stockage local chiffré (SQLCipher)
 ```
+
+## Licences tierces
+
+Les mentions et licences des composants tiers intégrés à l'application sont dans [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
