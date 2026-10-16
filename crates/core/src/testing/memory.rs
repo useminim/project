@@ -5,10 +5,12 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use chrono::{DateTime, Utc};
 
+use crate::document::{ContentHash, Document, DocumentStatus};
 use crate::execution::ExecutionLog;
 use crate::id::{DocumentId, RunId, WorkflowId};
 use crate::ports::{
-    ExecutionLogQuery, ExecutionLogRepository, PRIORITY_STEP, StoreError, WorkflowRepository,
+    DocumentRepository, ExecutionLogQuery, ExecutionLogRepository, PRIORITY_STEP, StoreError,
+    WorkflowRepository,
 };
 use crate::workflow::Workflow;
 
@@ -178,6 +180,64 @@ impl ExecutionLogRepository for InMemoryExecutionLogRepository {
     }
 }
 
+/// [`DocumentRepository`] en mémoire.
+#[derive(Debug, Default)]
+pub struct InMemoryDocumentRepository {
+    documents: Mutex<BTreeMap<DocumentId, Document>>,
+}
+
+impl DocumentRepository for InMemoryDocumentRepository {
+    fn save(&self, document: &Document) -> Result<(), StoreError> {
+        let mut documents = lock(&self.documents);
+        if let Some(other) = documents
+            .values()
+            .find(|other| other.sha256 == document.sha256 && other.id != document.id)
+        {
+            return Err(StoreError::DuplicateContent {
+                existing: other.id.to_string(),
+            });
+        }
+        documents.insert(document.id, document.clone());
+        Ok(())
+    }
+
+    fn get(&self, id: DocumentId) -> Result<Option<Document>, StoreError> {
+        Ok(lock(&self.documents).get(&id).cloned())
+    }
+
+    fn find_by_hash(&self, sha256: &ContentHash) -> Result<Option<Document>, StoreError> {
+        Ok(lock(&self.documents)
+            .values()
+            .find(|document| document.sha256 == *sha256)
+            .cloned())
+    }
+
+    fn update_status(&self, id: DocumentId, status: DocumentStatus) -> Result<bool, StoreError> {
+        let mut documents = lock(&self.documents);
+        let Some(document) = documents.get_mut(&id) else {
+            return Ok(false);
+        };
+        document
+            .transition(status)
+            .map_err(|error| StoreError::InvalidTransition {
+                id: id.to_string(),
+                from: error.from,
+                to: error.to,
+            })?;
+        Ok(true)
+    }
+
+    fn list_by_status(&self, status: DocumentStatus) -> Result<Vec<Document>, StoreError> {
+        let mut documents: Vec<_> = lock(&self.documents)
+            .values()
+            .filter(|document| document.status == status)
+            .cloned()
+            .collect();
+        documents.sort_by_key(|document| (document.received_at, document.id));
+        Ok(documents)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -191,5 +251,10 @@ mod tests {
     #[test]
     fn execution_log_repository_passes_the_contract() {
         contracts::execution_log_repository_contract(&InMemoryExecutionLogRepository::default());
+    }
+
+    #[test]
+    fn document_repository_passes_the_contract() {
+        contracts::document_repository_contract(&InMemoryDocumentRepository::default());
     }
 }

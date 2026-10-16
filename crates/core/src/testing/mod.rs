@@ -6,7 +6,7 @@
 //!   identifiants et lecteur déterministes ;
 //! - [`contracts`] : comportement attendu de toute implémentation des dépôts,
 //!   à appeler depuis les tests de chaque implémentation ;
-//! - [`samples`] : workflows et exécutions valides pour les tests.
+//! - [`samples`] : workflows, exécutions et documents valides pour les tests.
 
 pub mod contracts;
 pub mod memory;

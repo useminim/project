@@ -14,8 +14,13 @@
     reason = "code de test exporté : un échec doit interrompre le test"
 )]
 
+use std::path::PathBuf;
+
+use crate::document::{Document, DocumentStatus};
 use crate::execution::{ExecutionLog, ExecutionStatus};
-use crate::ports::{ExecutionLogQuery, ExecutionLogRepository, StoreError, WorkflowRepository};
+use crate::ports::{
+    DocumentRepository, ExecutionLogQuery, ExecutionLogRepository, StoreError, WorkflowRepository,
+};
 use crate::testing::samples;
 use crate::workflow::Workflow;
 
@@ -252,4 +257,108 @@ pub fn execution_log_repository_contract(repo: &dyn ExecutionLogRepository) {
     assert_eq!(repo.purge_before(samples::date(2)).unwrap(), 2);
     assert_eq!(repo.recent(10).unwrap(), [same_time, third]);
     assert_eq!(repo.purge_before(samples::date(0)).unwrap(), 0);
+}
+
+/// Vérifie le contrat de [`DocumentRepository`] sur un dépôt vide.
+///
+/// # Panics
+///
+/// Échoue dès qu'une règle du contrat n'est pas respectée.
+pub fn document_repository_contract(repo: &dyn DocumentRepository) {
+    let first = samples::document(samples::document_id(1), 1);
+    let second = samples::document(samples::document_id(2), 2);
+    // Reçu en même temps que `second` : départagé par l'identifiant.
+    let mut same_time = samples::document(samples::document_id(3), 3);
+    same_time.received_at = second.received_at;
+    assert_eq!(repo.get(first.id).unwrap(), None, "un dépôt neuf est vide");
+    assert_eq!(repo.find_by_hash(&first.sha256).unwrap(), None);
+    assert_eq!(repo.list_by_status(DocumentStatus::Pending).unwrap(), []);
+
+    for document in [&same_time, &first, &second] {
+        repo.save(document).unwrap();
+    }
+    assert_eq!(repo.get(first.id).unwrap(), Some(first.clone()));
+    assert_eq!(
+        repo.find_by_hash(&second.sha256).unwrap(),
+        Some(second.clone())
+    );
+    assert_eq!(repo.find_by_hash(&samples::content_hash(99)).unwrap(), None);
+    assert_eq!(
+        repo.list_by_status(DocumentStatus::Pending).unwrap(),
+        [first.clone(), second.clone(), same_time.clone()],
+        "list_by_status renvoie les documents par date de réception puis par identifiant"
+    );
+
+    // Même contenu sous un autre identifiant : refusé, rien n'est modifié.
+    let mut copy = samples::document(samples::document_id(4), 1);
+    copy.path = PathBuf::from("/autre/dossier/copie.pdf");
+    let error = repo.save(&copy).unwrap_err();
+    let first_id = first.id.to_string();
+    assert!(
+        matches!(&error, StoreError::DuplicateContent { existing } if *existing == first_id),
+        "deux documents ne peuvent pas avoir la même empreinte : {error:?}"
+    );
+    assert_eq!(repo.get(copy.id).unwrap(), None);
+
+    // Remplacement d'un document existant (nouvel emplacement).
+    let mut moved = first.clone();
+    moved.path = PathBuf::from("/archives/2026/facture-1.pdf");
+    repo.save(&moved).unwrap();
+    assert_eq!(repo.get(first.id).unwrap(), Some(moved.clone()));
+    assert_eq!(
+        repo.find_by_hash(&first.sha256).unwrap(),
+        Some(moved.clone())
+    );
+
+    // Statuts : seules les transitions permises sont enregistrées.
+    assert!(
+        repo.update_status(first.id, DocumentStatus::Processing)
+            .unwrap()
+    );
+    assert!(
+        repo.update_status(first.id, DocumentStatus::Processed)
+            .unwrap()
+    );
+    assert!(
+        matches!(
+            repo.update_status(first.id, DocumentStatus::Processing),
+            Err(StoreError::InvalidTransition {
+                from: DocumentStatus::Processed,
+                to: DocumentStatus::Processing,
+                ..
+            })
+        ),
+        "un document traité ne repart pas en traitement sans retraitement explicite"
+    );
+    assert_eq!(
+        repo.get(first.id).unwrap().map(|document| document.status),
+        Some(DocumentStatus::Processed),
+        "une transition refusée ne modifie rien"
+    );
+    assert!(
+        !repo
+            .update_status(samples::document_id(99), DocumentStatus::Processing)
+            .unwrap(),
+        "update_status renvoie false pour un document inconnu"
+    );
+    assert_eq!(
+        repo.list_by_status(DocumentStatus::Processed).unwrap(),
+        [Document {
+            status: DocumentStatus::Processed,
+            ..moved.clone()
+        }]
+    );
+    assert_eq!(
+        repo.list_by_status(DocumentStatus::Pending).unwrap(),
+        [second.clone(), same_time.clone()]
+    );
+
+    // Retraitement : enregistré par `save`, qui garde le statut tel quel.
+    let mut reprocessed = repo.get(first.id).unwrap().unwrap();
+    reprocessed.reprocess().unwrap();
+    repo.save(&reprocessed).unwrap();
+    assert_eq!(
+        repo.list_by_status(DocumentStatus::Pending).unwrap(),
+        [reprocessed, second, same_time]
+    );
 }

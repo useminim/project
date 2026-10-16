@@ -5,12 +5,16 @@
     reason = "code de test exporté : un échec doit interrompre le test"
 )]
 
+use std::path::PathBuf;
+
 use chrono::{DateTime, Duration, Utc};
 use ulid::Ulid;
 
 use crate::action::{Action, ActionKind};
+use crate::document::{ContentHash, Document, DocumentOrigin, DocumentStatus};
 use crate::execution::{ActionRecord, ActionStatus, ExecutionLog, ExecutionStatus};
 use crate::id::{DocumentId, RunId, UserId, WorkflowId};
+use crate::ports::DocumentKind;
 use crate::template::Template;
 use crate::trigger::{Condition, MatchMode, Trigger, TriggerSource};
 use crate::workflow::{CURRENT_SCHEMA_VERSION, Owner, Workflow};
@@ -38,6 +42,30 @@ pub fn document_id(n: u128) -> DocumentId {
 #[must_use]
 pub fn run_id(n: u128) -> RunId {
     RunId::from_ulid(Ulid::from(n))
+}
+
+/// Empreinte dont chaque octet vaut `byte`.
+#[must_use]
+pub const fn content_hash(byte: u8) -> ContentHash {
+    ContentHash::from_bytes([byte; 32])
+}
+
+/// Facture PDF déposée à la main, en attente de traitement, reçue `n`
+/// minutes après la date de référence. Son contenu (empreinte) dépend de `n`.
+#[must_use]
+pub fn document(id: DocumentId, n: u8) -> Document {
+    let name = format!("facture-{n}.pdf");
+    Document {
+        id,
+        path: PathBuf::from("/documents").join(&name),
+        original_name: name,
+        sha256: content_hash(n),
+        size: 1024,
+        kind: DocumentKind::Pdf,
+        origin: DocumentOrigin::Manual,
+        received_at: date(i64::from(n)),
+        status: DocumentStatus::Pending,
+    }
 }
 
 /// Workflow valide : renomme les fichiers dont le nom contient « facture ».

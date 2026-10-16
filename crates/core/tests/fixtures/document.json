@@ -1,0 +1,11 @@
+{
+  "id": "doc_01J8ZK3V9Q4X7M2N5P6R8T0W1Y",
+  "path": "/Users/exemple/Factures/2026-09-30 Fournisseur.pdf",
+  "original_name": "scan_0042.pdf",
+  "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+  "size": 48213,
+  "kind": "pdf",
+  "origin": { "type": "watched_folder", "folder_id": "fld_01J8ZK3V9Q4X7M2N5P6R8T0W1Y" },
+  "received_at": "2026-09-30T10:04:58Z",
+  "status": "processed"
+}
