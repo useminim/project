@@ -2,11 +2,14 @@
 //! l'utilisateur.
 
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 use crate::id::{DocumentId, RunId, WorkflowId};
 
 /// Raison pour laquelle un document est en zone d'attente.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum WaitingReason {
     /// Aucun workflow ne correspond au document.
     NoMatch,
