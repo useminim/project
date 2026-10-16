@@ -306,7 +306,7 @@ mod tests {
             serde_json::to_value(&outcome.decision).unwrap(),
             serde_json::json!({
                 "kind": "waiting_zone",
-                "reason": { "kind": "uncertain", "candidates": [samples::workflow_id(1).to_string()] }
+                "reason": { "type": "uncertain", "candidates": [samples::workflow_id(1).to_string()] }
             })
         );
     }

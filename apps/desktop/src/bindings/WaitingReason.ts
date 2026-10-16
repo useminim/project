@@ -5,11 +5,11 @@ import type { WorkflowId } from "./WorkflowId";
 /**
  * Raison pour laquelle un document est en zone d'attente.
  */
-export type WaitingReason = { "kind": "no_match" } | { "kind": "uncertain", 
+export type WaitingReason = { "type": "no_match" } | { "type": "uncertain", 
 /**
  * Workflows candidats, par ordre de priorité.
  */
-candidates: Array<WorkflowId>, } | { "kind": "action_failed", 
+candidates: Array<WorkflowId>, } | { "type": "action_failed", 
 /**
  * Workflow exécuté.
  */
