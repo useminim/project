@@ -49,6 +49,9 @@ ts-rs = "12"
 proptest = "1"
 tempfile = "3"
 
+# Actions sur les fichiers : empreinte des fichiers produits
+blake3 = "1"
+
 # Correspondance des déclencheurs
 regex = "1"
 unicode-normalization = "0.1"
