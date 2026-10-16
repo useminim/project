@@ -1,4 +1,5 @@
-//! Correspondance : évaluation d'un déclencheur sur un document.
+//! Correspondance : évaluation d'un déclencheur sur un document, et décision
+//! des workflows à exécuter ([`decide`], D-10).
 //!
 //! L'évaluation est pure : elle ne lit ni le disque ni le réseau. Elle renvoie
 //! un [`MatchResult`] à trois valeurs (logique de Kleene) et l'explication de
@@ -9,6 +10,7 @@
 //! (« non disponible ») tant que l'analyse des documents n'existe pas.
 
 pub mod date;
+pub mod decision;
 pub mod facts;
 pub mod text;
 
@@ -16,6 +18,7 @@ use chrono::NaiveDate;
 use serde::Serialize;
 
 pub use date::{DEFAULT_FORMATS, DateFormat, InvalidDateFormat, find_date, find_date_with};
+pub use decision::{MatchDecision, MatchOutcome, WorkflowEvaluation, decide};
 pub use facts::FileFacts;
 
 use crate::trigger::{Condition, MatchResult, Trigger};
