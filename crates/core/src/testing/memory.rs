@@ -5,11 +5,14 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use chrono::{DateTime, Utc};
 
+use crate::document::{ContentHash, Document, DocumentStatus};
 use crate::execution::ExecutionLog;
 use crate::id::{DocumentId, RunId, WorkflowId};
 use crate::ports::{
-    ExecutionLogQuery, ExecutionLogRepository, PRIORITY_STEP, StoreError, WorkflowRepository,
+    DocumentRepository, ExecutionLogQuery, ExecutionLogRepository, PRIORITY_STEP, StoreError,
+    WaitingZoneRepository, WorkflowRepository,
 };
+use crate::waiting_zone::WaitingEntry;
 use crate::workflow::Workflow;
 
 /// Verrouille sans échouer : un test qui a paniqué en tenant le verrou ne
@@ -178,6 +181,87 @@ impl ExecutionLogRepository for InMemoryExecutionLogRepository {
     }
 }
 
+/// [`DocumentRepository`] en mémoire.
+#[derive(Debug, Default)]
+pub struct InMemoryDocumentRepository {
+    documents: Mutex<BTreeMap<DocumentId, Document>>,
+}
+
+impl DocumentRepository for InMemoryDocumentRepository {
+    fn save(&self, document: &Document) -> Result<(), StoreError> {
+        let mut documents = lock(&self.documents);
+        if let Some(other) = documents
+            .values()
+            .find(|other| other.sha256 == document.sha256 && other.id != document.id)
+        {
+            return Err(StoreError::DuplicateContent {
+                existing: other.id.to_string(),
+            });
+        }
+        documents.insert(document.id, document.clone());
+        Ok(())
+    }
+
+    fn get(&self, id: DocumentId) -> Result<Option<Document>, StoreError> {
+        Ok(lock(&self.documents).get(&id).cloned())
+    }
+
+    fn find_by_hash(&self, sha256: &ContentHash) -> Result<Option<Document>, StoreError> {
+        Ok(lock(&self.documents)
+            .values()
+            .find(|document| document.sha256 == *sha256)
+            .cloned())
+    }
+
+    fn update_status(&self, id: DocumentId, status: DocumentStatus) -> Result<bool, StoreError> {
+        let mut documents = lock(&self.documents);
+        let Some(document) = documents.get_mut(&id) else {
+            return Ok(false);
+        };
+        document
+            .transition(status)
+            .map_err(|error| StoreError::InvalidTransition {
+                id: id.to_string(),
+                from: error.from,
+                to: error.to,
+            })?;
+        Ok(true)
+    }
+
+    fn list_by_status(&self, status: DocumentStatus) -> Result<Vec<Document>, StoreError> {
+        let mut documents: Vec<_> = lock(&self.documents)
+            .values()
+            .filter(|document| document.status == status)
+            .cloned()
+            .collect();
+        documents.sort_by_key(|document| (document.received_at, document.id));
+        Ok(documents)
+    }
+}
+
+/// [`WaitingZoneRepository`] en mémoire.
+#[derive(Debug, Default)]
+pub struct InMemoryWaitingZoneRepository {
+    entries: Mutex<BTreeMap<DocumentId, WaitingEntry>>,
+}
+
+impl WaitingZoneRepository for InMemoryWaitingZoneRepository {
+    fn put(&self, entry: &WaitingEntry) -> Result<(), StoreError> {
+        lock(&self.entries).insert(entry.document_id, entry.clone());
+        Ok(())
+    }
+
+    fn list(&self) -> Result<Vec<WaitingEntry>, StoreError> {
+        let mut entries: Vec<_> = lock(&self.entries).values().cloned().collect();
+        entries.sort_by_key(|entry| (entry.entered_at, entry.document_id));
+        Ok(entries)
+    }
+
+    fn remove(&self, document_id: DocumentId) -> Result<bool, StoreError> {
+        Ok(lock(&self.entries).remove(&document_id).is_some())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -191,5 +275,15 @@ mod tests {
     #[test]
     fn execution_log_repository_passes_the_contract() {
         contracts::execution_log_repository_contract(&InMemoryExecutionLogRepository::default());
+    }
+
+    #[test]
+    fn document_repository_passes_the_contract() {
+        contracts::document_repository_contract(&InMemoryDocumentRepository::default());
+    }
+
+    #[test]
+    fn waiting_zone_repository_passes_the_contract() {
+        contracts::waiting_zone_repository_contract(&InMemoryWaitingZoneRepository::default());
     }
 }

@@ -18,8 +18,8 @@ pub use reader::{
     TextSpan,
 };
 pub use store::{
-    ExecutionLogQuery, ExecutionLogRepository, PRIORITY_STEP, StoreError, WaitingZoneRepository,
-    WorkflowRepository,
+    DocumentRepository, ExecutionLogQuery, ExecutionLogRepository, PRIORITY_STEP, StoreError,
+    WaitingZoneRepository, WorkflowRepository,
 };
 pub use sync::{
     BoxFuture, CloudSync, EncryptedPayload, Revision, SyncBatch, SyncChange, SyncError,
@@ -41,6 +41,7 @@ mod tests {
         assert_shareable::<Arc<dyn DocumentReader>>();
         assert_shareable::<Arc<dyn OcrEngine>>();
         assert_shareable::<Arc<dyn WorkflowRepository>>();
+        assert_shareable::<Arc<dyn DocumentRepository>>();
         assert_shareable::<Arc<dyn ExecutionLogRepository>>();
         assert_shareable::<Arc<dyn WaitingZoneRepository>>();
         assert_shareable::<Arc<dyn CloudSync>>();

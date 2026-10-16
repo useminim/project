@@ -6,10 +6,13 @@ use std::io;
 use std::path::Path;
 
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// Format d'un document, déduit de son extension.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[serde(rename_all = "snake_case")]
 pub enum DocumentKind {
     /// Document PDF.
     Pdf,
