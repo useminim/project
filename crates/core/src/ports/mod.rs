@@ -17,7 +17,10 @@ pub use reader::{
     DocumentKind, DocumentMetadata, DocumentReader, Page, PageText, RawDocument, ReadError, Rect,
     TextSpan,
 };
-pub use store::{ExecutionLogRepository, StoreError, WaitingZoneRepository, WorkflowRepository};
+pub use store::{
+    ExecutionLogQuery, ExecutionLogRepository, PRIORITY_STEP, StoreError, WaitingZoneRepository,
+    WorkflowRepository,
+};
 pub use sync::{
     BoxFuture, CloudSync, EncryptedPayload, Revision, SyncBatch, SyncChange, SyncError,
 };
