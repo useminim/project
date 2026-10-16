@@ -49,8 +49,8 @@ ts-rs = "12"
 proptest = "1"
 tempfile = "3"
 
-# Actions sur les fichiers : empreinte des fichiers produits
-blake3 = "1"
+# Empreinte des fichiers (D-33)
+sha2 = "0.11"
 
 # Correspondance des déclencheurs
 regex = "1"

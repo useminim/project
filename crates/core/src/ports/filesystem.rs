@@ -69,7 +69,7 @@ pub trait FileSystem: Send + Sync {
     /// Renvoie une erreur si le fichier ne peut pas être supprimé.
     fn remove_file(&self, path: &Path) -> io::Result<()>;
 
-    /// Empreinte blake3 du contenu de `path`.
+    /// Empreinte SHA-256 du contenu de `path` (D-33).
     ///
     /// # Erreurs
     ///
@@ -127,9 +127,20 @@ impl FileSystem for StdFileSystem {
     }
 
     fn fingerprint(&self, path: &Path) -> io::Result<Fingerprint> {
-        let mut hasher = blake3::Hasher::new();
-        hasher.update_reader(fs::File::open(path)?)?;
-        Ok(Fingerprint::from_bytes(*hasher.finalize().as_bytes()))
+        use sha2::{Digest as _, Sha256};
+        use std::io::Read as _;
+
+        let mut file = fs::File::open(path)?;
+        let mut hasher = Sha256::new();
+        let mut buffer = vec![0_u8; 64 * 1024];
+        loop {
+            let read = file.read(&mut buffer)?;
+            if read == 0 {
+                break;
+            }
+            hasher.update(&buffer[..read]);
+        }
+        Ok(Fingerprint::from_bytes(hasher.finalize().into()))
     }
 }
 
@@ -266,7 +277,8 @@ mod tests {
         assert_eq!(disk.fingerprint(&a).unwrap(), disk.fingerprint(&b).unwrap());
         assert_eq!(
             disk.fingerprint(&a).unwrap().to_string(),
-            blake3::hash(b"contenu").to_hex().to_string()
+            // `printf contenu | sha256sum`
+            "3016ef88e3166466281c563b984abed5412a2de823d37ed99c2af39be422fab1"
         );
     }
 

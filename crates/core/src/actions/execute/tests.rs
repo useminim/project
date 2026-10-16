@@ -91,7 +91,7 @@ fn renames_the_original_file() {
     assert_eq!(operation.from, sandbox.file);
     assert_eq!(
         operation.fingerprint.to_string(),
-        blake3::hash(b"contenu de la facture").to_hex().to_string()
+        "d75bef5392f0d66d769dc67518c0768935a891e9b4e3e187f56f2b304d45b4ba"
     );
 }
 

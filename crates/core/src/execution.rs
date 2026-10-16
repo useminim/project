@@ -104,8 +104,9 @@ impl fmt::Debug for FileOperation {
     }
 }
 
-/// Empreinte blake3 du contenu d'un fichier, écrite en 64 caractères
-/// hexadécimaux minuscules. Elle ne révèle rien du contenu.
+/// Empreinte SHA-256 du contenu d'un fichier (D-33), écrite en 64 caractères
+/// hexadécimaux minuscules, comme `sha256sum` ou `Get-FileHash`. Elle ne
+/// révèle rien du contenu.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(type = "string"))]
 pub struct Fingerprint([u8; 32]);
