@@ -121,6 +121,25 @@ p {
   font-size: var(--font-size-title);
 }
 
+/* Bandeau d'information */
+
+.banner {
+  margin-bottom: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.banner--warning {
+  border-left-color: var(--color-primary);
+}
+
+.banner--error {
+  border-left-color: var(--color-danger);
+}
+
 /* Bouton */
 
 .button {
