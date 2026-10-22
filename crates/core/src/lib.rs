@@ -5,6 +5,7 @@
 
 pub mod action;
 pub mod actions;
+pub mod document;
 pub mod execution;
 pub mod field;
 pub mod id;
@@ -20,6 +21,10 @@ pub mod waiting_zone;
 pub mod workflow;
 
 pub use action::{Action, ActionKind, ConvertFormat, ExportFormat};
+pub use document::{
+    ContentHash, ContentHashError, Document, DocumentOrigin, DocumentStatus, DocumentSummary,
+    StatusTransitionError,
+};
 pub use execution::{ActionRecord, ActionStatus, ExecutionLog, ExecutionStatus};
 pub use field::{FieldName, FieldNameError};
 pub use id::{DocumentId, IdError, OrganizationId, ProfileId, RunId, UserId, WorkflowId};

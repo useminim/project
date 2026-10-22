@@ -7,6 +7,7 @@
 use chrono::{DateTime, Utc};
 use thiserror::Error;
 
+use crate::document::{ContentHash, Document, DocumentStatus};
 use crate::execution::{ExecutionLog, ExecutionStatus};
 use crate::id::{DocumentId, WorkflowId};
 use crate::waiting_zone::WaitingEntry;
@@ -36,6 +37,16 @@ pub enum StoreError {
         stored: u32,
         /// Version proposée.
         attempted: u32,
+    },
+    /// Le changement de statut d'un document n'est pas permis.
+    #[error("le document {id} ne peut pas passer de {from:?} à {to:?}")]
+    InvalidTransition {
+        /// Identifiant du document.
+        id: String,
+        /// Statut enregistré.
+        from: DocumentStatus,
+        /// Statut demandé.
+        to: DocumentStatus,
     },
     /// L'ordre demandé ne contient pas exactement les workflows existants.
     #[error("l'ordre demandé ne correspond pas aux workflows existants")]
@@ -179,7 +190,57 @@ pub trait ExecutionLogRepository: Send + Sync {
     fn purge_before(&self, cutoff: DateTime<Utc>) -> Result<usize, StoreError>;
 }
 
-/// Documents en zone d'attente. Implémenté avec la zone d'attente (prompt 23).
+/// Documents reçus par minim.
+pub trait DocumentRepository: Send + Sync {
+    /// Enregistre un nouveau document, ou remplace celui qui a le même
+    /// identifiant (nouvel emplacement après une action, retraitement…). Le
+    /// statut est enregistré tel quel : les changements de statut au fil du
+    /// traitement passent par [`DocumentRepository::update_status`].
+    ///
+    /// Plusieurs documents peuvent avoir la même empreinte : repérer un
+    /// doublon revient à l'ingestion, avec [`DocumentRepository::find_by_hash`].
+    ///
+    /// # Erreurs
+    ///
+    /// Renvoie une erreur si le stockage échoue.
+    fn save(&self, document: &Document) -> Result<(), StoreError>;
+
+    /// Renvoie le document, ou `None` s'il n'existe pas.
+    ///
+    /// # Erreurs
+    ///
+    /// Renvoie une erreur si le stockage échoue.
+    fn get(&self, id: DocumentId) -> Result<Option<Document>, StoreError>;
+
+    /// Renvoie le document qui a ce contenu, ou `None` : permet de ne pas
+    /// traiter deux fois le même fichier. Si plusieurs documents ont ce
+    /// contenu, renvoie le premier reçu (départagé par l'identifiant).
+    ///
+    /// # Erreurs
+    ///
+    /// Renvoie une erreur si le stockage échoue.
+    fn find_by_hash(&self, sha256: &ContentHash) -> Result<Option<Document>, StoreError>;
+
+    /// Fait passer le document au statut `status`, si la transition est
+    /// permise (voir [`DocumentStatus::can_become`]). Renvoie `false` si le
+    /// document n'existe pas.
+    ///
+    /// # Erreurs
+    ///
+    /// Renvoie [`StoreError::InvalidTransition`] si la transition n'est pas
+    /// permise ; rien n'est alors modifié.
+    fn update_status(&self, id: DocumentId, status: DocumentStatus) -> Result<bool, StoreError>;
+
+    /// Renvoie les documents qui ont ce statut, du plus ancien au plus récent
+    /// (date de réception, puis identifiant).
+    ///
+    /// # Erreurs
+    ///
+    /// Renvoie une erreur si le stockage échoue.
+    fn list_by_status(&self, status: DocumentStatus) -> Result<Vec<Document>, StoreError>;
+}
+
+/// Documents en zone d'attente.
 pub trait WaitingZoneRepository: Send + Sync {
     /// Place un document en zone d'attente, ou remplace son entrée.
     ///
@@ -188,7 +249,8 @@ pub trait WaitingZoneRepository: Send + Sync {
     /// Renvoie une erreur si le stockage échoue.
     fn put(&self, entry: &WaitingEntry) -> Result<(), StoreError>;
 
-    /// Renvoie les documents en attente, du plus ancien au plus récent.
+    /// Renvoie les documents en attente, du plus ancien au plus récent (date
+    /// d'entrée, puis identifiant du document).
     ///
     /// # Erreurs
     ///
