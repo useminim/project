@@ -38,12 +38,6 @@ pub enum StoreError {
         /// Version proposée.
         attempted: u32,
     },
-    /// Un autre document a déjà ce contenu (même empreinte).
-    #[error("le document {existing} a déjà ce contenu")]
-    DuplicateContent {
-        /// Identifiant du document qui a déjà ce contenu.
-        existing: String,
-    },
     /// Le changement de statut d'un document n'est pas permis.
     #[error("le document {id} ne peut pas passer de {from:?} à {to:?}")]
     InvalidTransition {
@@ -203,10 +197,12 @@ pub trait DocumentRepository: Send + Sync {
     /// statut est enregistré tel quel : les changements de statut au fil du
     /// traitement passent par [`DocumentRepository::update_status`].
     ///
+    /// Plusieurs documents peuvent avoir la même empreinte : repérer un
+    /// doublon revient à l'ingestion, avec [`DocumentRepository::find_by_hash`].
+    ///
     /// # Erreurs
     ///
-    /// Renvoie [`StoreError::DuplicateContent`] si un autre document a la
-    /// même empreinte ; rien n'est alors modifié.
+    /// Renvoie une erreur si le stockage échoue.
     fn save(&self, document: &Document) -> Result<(), StoreError>;
 
     /// Renvoie le document, ou `None` s'il n'existe pas.
@@ -217,7 +213,8 @@ pub trait DocumentRepository: Send + Sync {
     fn get(&self, id: DocumentId) -> Result<Option<Document>, StoreError>;
 
     /// Renvoie le document qui a ce contenu, ou `None` : permet de ne pas
-    /// traiter deux fois le même fichier.
+    /// traiter deux fois le même fichier. Si plusieurs documents ont ce
+    /// contenu, renvoie le premier reçu (départagé par l'identifiant).
     ///
     /// # Erreurs
     ///

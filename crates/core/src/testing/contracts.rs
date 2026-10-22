@@ -291,16 +291,17 @@ pub fn document_repository_contract(repo: &dyn DocumentRepository) {
         "list_by_status renvoie les documents par date de réception puis par identifiant"
     );
 
-    // Même contenu sous un autre identifiant : refusé, rien n'est modifié.
+    // Même contenu sous un autre identifiant : accepté, l'ingestion décide
+    // quoi faire d'un doublon. find_by_hash renvoie le premier reçu.
     let mut copy = samples::document(samples::document_id(4), 1);
     copy.path = PathBuf::from("/autre/dossier/copie.pdf");
-    let error = repo.save(&copy).unwrap_err();
-    let first_id = first.id.to_string();
-    assert!(
-        matches!(&error, StoreError::DuplicateContent { existing } if *existing == first_id),
-        "deux documents ne peuvent pas avoir la même empreinte : {error:?}"
+    repo.save(&copy).unwrap();
+    assert_eq!(repo.get(copy.id).unwrap(), Some(copy.clone()));
+    assert_eq!(
+        repo.find_by_hash(&first.sha256).unwrap(),
+        Some(first.clone()),
+        "find_by_hash renvoie le premier document reçu qui a ce contenu"
     );
-    assert_eq!(repo.get(copy.id).unwrap(), None);
 
     // Remplacement d'un document existant (nouvel emplacement).
     let mut moved = first.clone();
@@ -352,7 +353,7 @@ pub fn document_repository_contract(repo: &dyn DocumentRepository) {
     );
     assert_eq!(
         repo.list_by_status(DocumentStatus::Pending).unwrap(),
-        [second.clone(), same_time.clone()]
+        [copy.clone(), second.clone(), same_time.clone()]
     );
 
     // Retraitement : enregistré par `save`, qui garde le statut tel quel.
@@ -361,7 +362,7 @@ pub fn document_repository_contract(repo: &dyn DocumentRepository) {
     repo.save(&reprocessed).unwrap();
     assert_eq!(
         repo.list_by_status(DocumentStatus::Pending).unwrap(),
-        [reprocessed, second, same_time]
+        [reprocessed, copy, second, same_time]
     );
 }
 

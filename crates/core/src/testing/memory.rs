@@ -189,16 +189,7 @@ pub struct InMemoryDocumentRepository {
 
 impl DocumentRepository for InMemoryDocumentRepository {
     fn save(&self, document: &Document) -> Result<(), StoreError> {
-        let mut documents = lock(&self.documents);
-        if let Some(other) = documents
-            .values()
-            .find(|other| other.sha256 == document.sha256 && other.id != document.id)
-        {
-            return Err(StoreError::DuplicateContent {
-                existing: other.id.to_string(),
-            });
-        }
-        documents.insert(document.id, document.clone());
+        lock(&self.documents).insert(document.id, document.clone());
         Ok(())
     }
 
@@ -209,7 +200,8 @@ impl DocumentRepository for InMemoryDocumentRepository {
     fn find_by_hash(&self, sha256: &ContentHash) -> Result<Option<Document>, StoreError> {
         Ok(lock(&self.documents)
             .values()
-            .find(|document| document.sha256 == *sha256)
+            .filter(|document| document.sha256 == *sha256)
+            .min_by_key(|document| (document.received_at, document.id))
             .cloned())
     }
 
