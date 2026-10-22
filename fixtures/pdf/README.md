@@ -4,7 +4,7 @@ Documents **entièrement synthétiques** : noms, adresses, montants et IBAN sont
 
 | Fichier | Contenu | Origine |
 | --- | --- | --- |
-| `facture.pdf` | Facture d'une page avec un tableau | `sources/facture.html` imprimé en PDF par Microsoft Edge (headless) |
+| `facture.pdf` | Facture d'une page avec un tableau (format Letter, comme les autres) | `sources/facture.html` imprimé en PDF par Microsoft Edge (headless) |
 | `police.pdf` | Attestation en polices Gabriola et Comic Sans (polices incorporées) | `sources/police.html`, Edge |
 | `scan.pdf` | « Scan » de la facture : une image seule, sans texte (2 pages) | Capture d'écran de `facture.html` insérée dans `sources/scan.html`, Edge |
 | `vide.pdf` | Une page blanche, sans texte | `sources/vide.html`, Edge |

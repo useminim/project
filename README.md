@@ -47,7 +47,7 @@ apps/
     src-tauri/    Crate Rust de l'application desktop
 crates/
   core/           Domaine et moteur de workflows
-  extract/        Lecteurs de documents (PDF avec PDFium)
+  extract/        Lecteurs et convertisseurs de documents (PDF avec PDFium)
   shared/         Types partagés entre le desktop et l'API
   store/          Stockage local chiffré (SQLCipher)
 fixtures/
