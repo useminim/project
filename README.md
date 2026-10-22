@@ -25,6 +25,8 @@ Dépendances système de Tauri ([documentation](https://v2.tauri.app/start/prere
 
 Chiffrement de la base locale : OpenSSL est compilé depuis les sources, ce qui demande **Perl**. Il est présent par défaut sous macOS et Linux ; sous Windows, installer [Strawberry Perl](https://strawberryperl.com/) (`winget install StrawberryPerl.StrawberryPerl`), et non le Perl de Git ou de MSYS. [NASM](https://www.nasm.us/) est facultatif : sans lui, OpenSSL est compilé sans optimisations assembleur. Le premier build est plus long ; les suivants utilisent le cache de Cargo.
 
+Lecture des PDF : la bibliothèque PDFium (version figée, empreinte SHA-256 vérifiée) est téléchargée automatiquement dans `apps/desktop/src-tauri/resources/pdfium/` par `pnpm dev`, `pnpm build`, `pnpm lint` et `pnpm test` (script `pnpm fetch:pdfium`). Une connexion est donc nécessaire la première fois.
+
 ## Commandes
 
 | Commande | Description |
@@ -45,9 +47,12 @@ apps/
     src-tauri/    Crate Rust de l'application desktop
 crates/
   core/           Domaine et moteur de workflows
-  extract/        Extraction de texte PDF / DOCX
+  extract/        Lecteurs de documents (PDF avec PDFium)
   shared/         Types partagés entre le desktop et l'API
   store/          Stockage local chiffré (SQLCipher)
+fixtures/
+  pdf/            Corpus PDF de test, synthétique
+scripts/          Scripts de build (PDFium, types générés)
 ```
 
 ## Licences tierces
