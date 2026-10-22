@@ -3,10 +3,11 @@
 
 use std::fmt;
 use std::io;
-use std::path::Path;
 
 use chrono::{DateTime, Utc};
 use thiserror::Error;
+
+use crate::redacted::Redacted;
 
 /// Format d'un document, déduit de son extension.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -96,14 +97,25 @@ pub struct Page {
     pub text: PageText,
 }
 
-/// Métadonnées d'un document, quand le format les fournit.
+/// Métadonnées d'un document, quand le format les fournit. Le titre et
+/// l'auteur peuvent contenir des données personnelles : ils sont enveloppés
+/// dans [`Redacted`].
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DocumentMetadata {
+    /// Titre inscrit dans le document.
+    pub title: Option<Redacted<String>>,
+    /// Auteur inscrit dans le document.
+    pub author: Option<Redacted<String>>,
     /// Date de création inscrite dans le document.
     pub created_at: Option<DateTime<Utc>>,
+    /// Date de modification inscrite dans le document.
+    pub modified_at: Option<DateTime<Utc>>,
     /// Logiciel qui a produit le document (logiciel de numérisation, de
     /// bureautique…), utile pour reconnaître un document scanné.
     pub producer: Option<String>,
+    /// Le document est chiffré mais lisible sans mot de passe (seules les
+    /// autorisations sont restreintes : impression, copie…).
+    pub restricted: bool,
 }
 
 /// Contenu brut d'un document, tel que le lecteur l'a extrait.
@@ -169,6 +181,18 @@ pub enum ReadError {
         /// Taille maximale acceptée, en octets.
         limit_bytes: u64,
     },
+    /// Le document a plus de pages que la limite acceptée.
+    #[error("document trop long (limite : {limit} pages)")]
+    TooManyPages {
+        /// Nombre maximal de pages accepté.
+        limit: u32,
+    },
+    /// La lecture a dépassé la durée maximale.
+    #[error("lecture trop longue, abandonnée")]
+    Timeout,
+    /// Le lecteur ne peut pas fonctionner (bibliothèque absente ou arrêtée).
+    #[error("lecteur indisponible")]
+    Unavailable(#[source] Box<dyn std::error::Error + Send + Sync>),
     /// Le fichier ne peut pas être lu.
     #[error("lecture du fichier impossible")]
     Io(#[source] io::Error),
@@ -179,13 +203,15 @@ pub trait DocumentReader: Send + Sync {
     /// Indique si ce lecteur prend en charge le format.
     fn supports(&self, kind: DocumentKind) -> bool;
 
-    /// Lit le document situé à `path`, dont le format est `kind`.
+    /// Lit le document `bytes`, dont le format est `kind`. Le document est
+    /// passé en mémoire : il peut venir d'un fichier ou d'une copie chiffrée
+    /// déchiffrée par minim (D-31), sans jamais être écrit en clair.
     ///
     /// # Erreurs
     ///
     /// Renvoie [`ReadError::Unsupported`] si le format n'est pas pris en
-    /// charge, et les autres variantes si le fichier ne peut pas être lu.
-    fn read(&self, path: &Path, kind: DocumentKind) -> Result<RawDocument, ReadError>;
+    /// charge, et les autres variantes si le document ne peut pas être lu.
+    fn read(&self, bytes: &[u8], kind: DocumentKind) -> Result<RawDocument, ReadError>;
 }
 
 #[cfg(test)]

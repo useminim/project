@@ -12,7 +12,6 @@ pub mod contracts;
 pub mod memory;
 pub mod samples;
 
-use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, PoisonError};
 
@@ -123,7 +122,7 @@ impl DocumentReader for StaticReader {
         kind == self.kind
     }
 
-    fn read(&self, _path: &Path, kind: DocumentKind) -> Result<RawDocument, ReadError> {
+    fn read(&self, _bytes: &[u8], kind: DocumentKind) -> Result<RawDocument, ReadError> {
         if kind != self.kind {
             return Err(ReadError::Unsupported(kind));
         }
@@ -164,14 +163,14 @@ mod tests {
     fn returns_the_prepared_document() {
         let reader = StaticReader::with_pages(DocumentKind::Pdf, &["page 1", ""]);
 
-        let document = reader.read(Path::new("a.pdf"), DocumentKind::Pdf).unwrap();
+        let document = reader.read(b"%PDF", DocumentKind::Pdf).unwrap();
 
         assert_eq!(document.pages.len(), 2);
         assert_eq!(document.pages[1].number, 2);
         assert!(document.pages[1].text.is_empty());
         assert!(!reader.supports(DocumentKind::Png));
         assert!(matches!(
-            reader.read(Path::new("a.png"), DocumentKind::Png),
+            reader.read(b"png", DocumentKind::Png),
             Err(ReadError::Unsupported(DocumentKind::Png))
         ));
     }
@@ -181,7 +180,7 @@ mod tests {
         let reader = StaticReader::failing(DocumentKind::Pdf, || ReadError::Encrypted);
 
         assert!(matches!(
-            reader.read(Path::new("a.pdf"), DocumentKind::Pdf),
+            reader.read(b"%PDF", DocumentKind::Pdf),
             Err(ReadError::Encrypted)
         ));
     }
