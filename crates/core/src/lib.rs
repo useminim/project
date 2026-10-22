@@ -4,6 +4,7 @@
 //! échangée avec l'interface et synchronisée avec le cloud.
 
 pub mod action;
+pub mod actions;
 pub mod execution;
 pub mod field;
 pub mod id;

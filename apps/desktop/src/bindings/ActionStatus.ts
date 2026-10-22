@@ -3,4 +3,4 @@
 /**
  * Résultat d'une action.
  */
-export type ActionStatus = "success" | "failed";
+export type ActionStatus = "success" | "failed" | "rolled_back";
