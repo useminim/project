@@ -49,3 +49,10 @@ $RECYCLE.BIN/
 *~
 .fleet/
 .zed/
+
+# PDFium, téléchargé par scripts/fetch-pdfium.mjs
+apps/desktop/src-tauri/resources/pdfium/
+
+# Outil de génération du corpus PDF (hors workspace)
+fixtures/pdf/encrypt/target/
+fixtures/pdf/encrypt/Cargo.lock

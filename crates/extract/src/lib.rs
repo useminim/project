@@ -1,9 +1,9 @@
-//! Extraction de texte des documents PDF et DOCX.
+//! Lecteurs de documents de minim : implémentations de `DocumentReader`.
+//!
+//! - PDF : [`PdfReader`], avec PDFium (D-34). Les binaires de PDFium sont
+//!   fournis par `scripts/fetch-pdfium.mjs` dans les ressources de
+//!   l'application.
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn crate_is_wired_into_the_workspace() {
-        assert_eq!(env!("CARGO_PKG_NAME"), "minim-extract");
-    }
-}
+pub mod pdf;
+
+pub use pdf::{LibraryUnavailable, PdfLimits, PdfReader};

@@ -1,12 +1,16 @@
 [package]
 name = "minim-extract"
-description = "Text extraction from PDF and DOCX documents"
+description = "minim document readers (PDF with PDFium)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+chrono.workspace = true
+minim-core.workspace = true
+pdfium-render.workspace = true
+thiserror.workspace = true
 
 [lints]
 workspace = true

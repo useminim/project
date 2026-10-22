@@ -37,6 +37,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Primitives cryptographiques utilisées par SQLCipher (OpenSSL 4, compilé depuis les sources par la crate `openssl-src`). Copyright The OpenSSL Project Authors. Distribué sous la licence Apache 2.0, dont le texte complet est dans [`licenses/Apache-2.0.txt`](licenses/Apache-2.0.txt).
 
+## PDFium
+
+Lecture et rendu des PDF (D-34). PDFium, le moteur PDF de Chromium, est distribué sous forme de bibliothèque dynamique précompilée par le projet [bblanchon/pdfium-binaries](https://github.com/bblanchon/pdfium-binaries) (empaquetage sous licence MIT), version `chromium/8111`. Copyright 2014 The PDFium Authors, licence BSD à trois clauses.
+
+PDFium intègre des composants tiers sous licences permissives (Abseil, Anti-Grain Geometry, dragonbox, fast_float, FreeType, HarfBuzz, Highway, ICU, Little CMS, libjpeg-turbo, OpenJPEG, libpng, LLVM libc, simdutf, zlib). Leurs textes de licence complets sont livrés avec l'application, dans le dossier de ressources `pdfium/licenses/`. Mentions demandées par ces licences :
+
+- Portions of this software are copyright © The FreeType Project (www.freetype.org). All rights reserved.
+- This software is based in part on the work of the Independent JPEG Group.
+
 ## SQLite
 
 SQLite, sur lequel repose SQLCipher, est dans le domaine public.

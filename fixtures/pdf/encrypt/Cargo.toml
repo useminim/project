@@ -1,0 +1,11 @@
+# Outil autonome qui produit chiffre.pdf (hors du workspace).
+[package]
+name = "encrypt-fixture"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+lopdf = "0.46"
+
+[workspace]
