@@ -37,6 +37,10 @@ keyring-core = "1"
 windows-native-keyring-store = "1"
 zbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust"] }
 
+# Lecture des PDF (D-34) : les binaires PDFium sont fournis par
+# scripts/fetch-pdfium.mjs.
+pdfium-render = { version = "0.9", default-features = false, features = ["pdfium_latest", "thread_safe"] }
+
 # Logs et diagnostics
 tracing = "0.1"
 tracing-appender = "0.2"
