@@ -1,5 +1,6 @@
 {
   "unavailable": "Le stockage local n'a pas pu être ouvert : le trousseau du système refuse l'accès à la clé. Vos données n'ont pas été modifiées. Déverrouillez le trousseau puis redémarrez minim.",
+  "dismissReducedProtection": "Masquer ce message",
   "reducedProtection": "Protection réduite : aucun trousseau n'est disponible sur ce système, la clé de vos données est gardée dans un fichier protégé par les seuls droits de votre compte.",
   "recovered": {
     "key_lost": "La clé de vos données locales a été perdue (réinstallation ou nouveau profil). L'ancienne base a été mise de côté et une nouvelle base a été créée.",

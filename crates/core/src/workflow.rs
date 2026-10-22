@@ -6,6 +6,7 @@ use thiserror::Error;
 
 use crate::action::Action;
 use crate::id::{OrganizationId, UserId, WorkflowId};
+use crate::matching::DateFormat;
 use crate::trigger::{Condition, Trigger};
 
 /// Version du schéma JSON des workflows écrits par cette version de minim.
@@ -134,6 +135,10 @@ pub enum ValidationErrorKind {
     /// Le format de date d'une condition est vide.
     #[error("le format de date est vide")]
     EmptyDateFormat,
+    /// Le format de date ne contient pas `YYYY`, `MM` et `DD` une fois
+    /// chacun, séparés par des signes.
+    #[error("le format de date est invalide")]
+    InvalidDateFormat,
     /// Une condition sur l'extension n'en liste aucune.
     #[error("aucune extension indiquée")]
     NoExtensions,
@@ -267,14 +272,11 @@ fn validate_condition(
                 push(Kind::EmptySearchText);
             }
         }
-        Condition::FileNameMatchesDate { format } => {
-            if format
-                .as_deref()
-                .is_some_and(|format| format.trim().is_empty())
-            {
-                push(Kind::EmptyDateFormat);
-            }
-        }
+        Condition::FileNameMatchesDate { format } => match format.as_deref() {
+            Some(format) if format.trim().is_empty() => push(Kind::EmptyDateFormat),
+            Some(format) if DateFormat::parse(format).is_err() => push(Kind::InvalidDateFormat),
+            _ => {}
+        },
         Condition::FileExtensionIs { values } => {
             if values.is_empty() {
                 push(Kind::NoExtensions);
@@ -611,6 +613,22 @@ mod tests {
             Err((0..5)
                 .map(|index| error(&format!("actions[{index}]"), Kind::RelativeDestination))
                 .collect())
+        );
+    }
+
+    #[test]
+    fn checks_the_date_format() {
+        let workflow = conditions(json!([
+            { "type": "file_name_matches_date", "format": "YYYY-MM-DD" },
+            { "type": "file_name_matches_date", "format": "AAAA-MM-JJ" }
+        ]));
+
+        assert_eq!(
+            workflow.validate(),
+            Err(vec![error(
+                "trigger.conditions[1]",
+                Kind::InvalidDateFormat
+            )])
         );
     }
 

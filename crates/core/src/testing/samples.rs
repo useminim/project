@@ -125,6 +125,7 @@ pub fn execution_log(
             kind: ActionKind::Rename,
             status: ActionStatus::Success,
             duration_ms: 4,
+            operation: None,
         }],
         error: None,
         started_at,

@@ -4,10 +4,12 @@
 //! échangée avec l'interface et synchronisée avec le cloud.
 
 pub mod action;
+pub mod actions;
 pub mod document;
 pub mod execution;
 pub mod field;
 pub mod id;
+pub mod matching;
 pub mod ports;
 pub mod profile;
 pub mod redacted;

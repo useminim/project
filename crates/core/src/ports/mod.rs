@@ -4,6 +4,7 @@
 //! imprimante) vivent dans d'autres crates ; `minim-core` ne connaît que ces
 //! traits. Tous sont `Send + Sync` et utilisables derrière `Arc<dyn …>`.
 
+pub mod filesystem;
 pub mod ocr;
 pub mod printer;
 pub mod reader;
@@ -11,6 +12,7 @@ pub mod store;
 pub mod sync;
 pub mod time;
 
+pub use filesystem::{DryRunFileSystem, FileMetadata, FileSystem, StdFileSystem};
 pub use ocr::{Language, OcrEngine, OcrError, PageImage};
 pub use printer::{CapturedJob, JobSink, PrintCapture, PrinterError};
 pub use reader::{
@@ -48,6 +50,7 @@ mod tests {
         assert_shareable::<Arc<dyn PrintCapture>>();
         assert_shareable::<Arc<dyn JobSink>>();
         assert_shareable::<Arc<dyn Clock>>();
+        assert_shareable::<Arc<dyn FileSystem>>();
         assert_shareable::<Arc<dyn IdGenerator>>();
     }
 }

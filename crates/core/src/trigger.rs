@@ -147,6 +147,37 @@ pub enum MatchResult {
     Uncertain,
 }
 
+impl MatchResult {
+    /// ET en logique de Kleene : `NoMatch` l'emporte, puis `Uncertain`.
+    #[must_use]
+    pub const fn and(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::NoMatch, _) | (_, Self::NoMatch) => Self::NoMatch,
+            (Self::Uncertain, _) | (_, Self::Uncertain) => Self::Uncertain,
+            (Self::Match, Self::Match) => Self::Match,
+        }
+    }
+
+    /// OU en logique de Kleene : `Match` l'emporte, puis `Uncertain`.
+    #[must_use]
+    pub const fn or(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Match, _) | (_, Self::Match) => Self::Match,
+            (Self::Uncertain, _) | (_, Self::Uncertain) => Self::Uncertain,
+            (Self::NoMatch, Self::NoMatch) => Self::NoMatch,
+        }
+    }
+
+    /// Combine des résultats selon le mode : `all` vaut `Match` pour une liste
+    /// vide, `any` vaut `NoMatch`.
+    pub fn combine(mode: MatchMode, results: impl IntoIterator<Item = Self>) -> Self {
+        match mode {
+            MatchMode::All => results.into_iter().fold(Self::Match, Self::and),
+            MatchMode::Any => results.into_iter().fold(Self::NoMatch, Self::or),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -222,6 +253,69 @@ mod tests {
                 case_sensitive: false
             }
         );
+    }
+
+    const RESULTS: [MatchResult; 3] = [
+        MatchResult::Match,
+        MatchResult::NoMatch,
+        MatchResult::Uncertain,
+    ];
+
+    /// Valeur numérique de Kleene : faux = 0, inconnu = 1, vrai = 2. ET est
+    /// le minimum, OU le maximum.
+    fn rank(result: MatchResult) -> u8 {
+        match result {
+            MatchResult::NoMatch => 0,
+            MatchResult::Uncertain => 1,
+            MatchResult::Match => 2,
+        }
+    }
+
+    #[test]
+    fn follows_kleene_logic_for_every_pair() {
+        for a in RESULTS {
+            for b in RESULTS {
+                assert_eq!(rank(a.and(b)), rank(a).min(rank(b)), "{a:?} et {b:?}");
+                assert_eq!(rank(a.or(b)), rank(a).max(rank(b)), "{a:?} ou {b:?}");
+                assert_eq!(a.and(b), b.and(a));
+                assert_eq!(a.or(b), b.or(a));
+            }
+        }
+    }
+
+    #[test]
+    fn combines_every_list_of_up_to_three_results() {
+        let mut lists: Vec<Vec<MatchResult>> = vec![Vec::new()];
+        for _ in 0..3 {
+            let longer: Vec<_> = lists
+                .iter()
+                .filter(|list| list.len() == lists.last().map_or(0, Vec::len))
+                .flat_map(|list| {
+                    RESULTS.iter().map(move |result| {
+                        let mut next = list.clone();
+                        next.push(*result);
+                        next
+                    })
+                })
+                .collect();
+            lists.extend(longer);
+        }
+        assert_eq!(lists.len(), 1 + 3 + 9 + 27);
+
+        for list in lists {
+            let all = list.iter().map(|r| rank(*r)).min().unwrap_or(2);
+            let any = list.iter().map(|r| rank(*r)).max().unwrap_or(0);
+            assert_eq!(
+                rank(MatchResult::combine(MatchMode::All, list.clone())),
+                all,
+                "all {list:?}"
+            );
+            assert_eq!(
+                rank(MatchResult::combine(MatchMode::Any, list.clone())),
+                any,
+                "any {list:?}"
+            );
+        }
     }
 
     #[test]

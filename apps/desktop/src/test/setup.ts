@@ -9,6 +9,7 @@ const initialUiState = useUiStore.getState();
 
 afterEach(async () => {
   cleanup();
+  localStorage.clear();
   useUiStore.setState(initialUiState, true);
   await i18n.changeLanguage("fr");
 });
