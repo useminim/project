@@ -3,4 +3,4 @@
 /**
  * Format cible d'une conversion.
  */
-export type ConvertFormat = "pdf" | "png";
+export type ConvertFormat = "pdf" | "png" | "jpeg";

@@ -6,7 +6,7 @@ use serde_json::json;
 use super::*;
 use crate::execution::Fingerprint;
 use crate::ports::{DryRunFileSystem, FileMetadata, StdFileSystem};
-use crate::testing::{SequentialIds, samples};
+use crate::testing::{FakeConverter, SequentialIds, samples};
 
 const NAME: &str = "Facture_2026-03-15.pdf";
 
@@ -66,7 +66,23 @@ fn workflow(actions: serde_json::Value) -> Workflow {
 }
 
 fn run(fs: &dyn FileSystem, sandbox: &Sandbox, workflow: &Workflow) -> WorkflowRun {
-    run_workflow(fs, workflow, samples::run_id(1), &sandbox.request(), true)
+    run_with(fs, &FakeConverter::default(), sandbox, workflow)
+}
+
+fn run_with(
+    fs: &dyn FileSystem,
+    converter: &FakeConverter,
+    sandbox: &Sandbox,
+    workflow: &Workflow,
+) -> WorkflowRun {
+    let tools = Tools { fs, converter };
+    run_workflow(
+        tools,
+        workflow,
+        samples::run_id(1),
+        &sandbox.request(),
+        true,
+    )
 }
 
 fn statuses(run: &WorkflowRun) -> Vec<ActionStatus> {
@@ -86,7 +102,9 @@ fn renames_the_original_file() {
     assert_eq!(run.log.status, ExecutionStatus::Success);
     assert_eq!(sandbox.names(""), ["20260315 Facture.pdf"]);
     assert_eq!(run.location, sandbox.root.join("20260315 Facture.pdf"));
-    let operation = run.log.actions[0].operation.as_ref().unwrap();
+    let [operation] = run.log.actions[0].operations.as_slice() else {
+        panic!("une seule opération attendue");
+    };
     assert_eq!(operation.kind, OperationKind::Rename);
     assert_eq!(operation.from, sandbox.file);
     assert_eq!(
@@ -129,7 +147,7 @@ fn keeps_a_name_that_does_not_change() {
     );
 
     assert_eq!(run.failure, None);
-    assert_eq!(run.log.actions[0].operation, None);
+    assert!(run.log.actions[0].operations.is_empty());
     assert_eq!(sandbox.names(""), [NAME]);
 }
 
@@ -302,7 +320,7 @@ fn fails_on_a_missing_variable_or_an_unavailable_action() {
         (
             json!([
                 { "type": "rename", "template": "Facture.pdf" },
-                { "type": "convert", "to": "png" }
+                { "type": "extract_fields", "fields": ["date"], "output": "csv" }
             ]),
             FailureCode::ActionNotAvailable,
         ),
@@ -331,6 +349,12 @@ impl FileSystem for NoHardLinks {
     }
     fn copy_new(&self, from: &Path, to: &Path) -> io::Result<()> {
         StdFileSystem.copy_new(from, to)
+    }
+    fn write_new(&self, path: &Path, content: &[u8]) -> io::Result<()> {
+        StdFileSystem.write_new(path, content)
+    }
+    fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
+        StdFileSystem.read(path)
     }
     fn remove_file(&self, path: &Path) -> io::Result<()> {
         StdFileSystem.remove_file(path)
@@ -377,6 +401,12 @@ impl FileSystem for FailingRemoval {
     }
     fn copy_new(&self, from: &Path, to: &Path) -> io::Result<()> {
         StdFileSystem.copy_new(from, to)
+    }
+    fn write_new(&self, path: &Path, content: &[u8]) -> io::Result<()> {
+        StdFileSystem.write_new(path, content)
+    }
+    fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
+        StdFileSystem.read(path)
     }
     fn remove_file(&self, path: &Path) -> io::Result<()> {
         let mut calls = self.calls.lock().unwrap();
@@ -430,7 +460,7 @@ fn undoes_an_operation_only_if_the_file_is_unchanged() {
         &sandbox,
         &workflow(json!([{ "type": "rename", "template": "Facture mars.pdf" }])),
     );
-    let operation = run.log.actions[0].operation.clone().unwrap();
+    let operation = run.log.actions[0].operations[0].clone();
     fs::write(&operation.to, "modifié depuis").unwrap();
 
     assert!(undo(&StdFileSystem, &operation).is_err());
@@ -449,7 +479,10 @@ fn stops_a_chain_at_the_first_failure() {
     third.id = samples::workflow_id(3);
 
     let chain = run_chain(
-        &StdFileSystem,
+        Tools {
+            fs: &StdFileSystem,
+            converter: &FakeConverter::default(),
+        },
         &[&first, &second, &third],
         &SequentialIds::default(),
         &sandbox.request(),
@@ -502,4 +535,182 @@ fn produces_names_that_windows_accepts() {
 
     assert_eq!(run.failure, None);
     assert!(sandbox.root.join("NUL_.txt").exists());
+}
+
+#[test]
+fn converts_a_pdf_into_one_image_per_page_next_to_it() {
+    let sandbox = sandbox();
+    fs::write(sandbox.root.join("Facture_2026-03-15_p1.png"), "autre").unwrap();
+    let workflow = workflow(json!([
+        { "type": "convert", "to": "png", "dpi": 300 },
+        { "type": "move", "destination": sandbox.folder("classé") }
+    ]));
+
+    let run = run(&StdFileSystem, &sandbox, &workflow);
+
+    assert_eq!(run.failure, None);
+    assert_eq!(
+        sandbox.names(""),
+        [
+            "Facture_2026-03-15_p1 (2).png",
+            "Facture_2026-03-15_p1.png",
+            "Facture_2026-03-15_p2.png",
+            "classé",
+        ]
+    );
+    assert_eq!(
+        fs::read_to_string(sandbox.root.join("Facture_2026-03-15_p2.png")).unwrap(),
+        "image-2-300"
+    );
+    // Le document reste le PDF : c'est lui que l'action suivante déplace.
+    assert_eq!(sandbox.names("classé"), [NAME]);
+    let operations = &run.log.actions[0].operations;
+    assert_eq!(operations.len(), 2);
+    assert!(operations.iter().all(|operation| {
+        operation.kind == OperationKind::Convert && operation.from == sandbox.file
+    }));
+    assert_eq!(operations[1].fingerprint, Fingerprint::of(b"image-2-300"));
+}
+
+#[test]
+fn converts_with_default_settings_and_to_jpeg() {
+    let sandbox = sandbox();
+
+    let run = run(
+        &StdFileSystem,
+        &sandbox,
+        &workflow(json!([{ "type": "convert", "to": "jpeg" }])),
+    );
+
+    assert_eq!(run.failure, None);
+    assert_eq!(
+        sandbox.names(""),
+        [
+            NAME,
+            "Facture_2026-03-15_p1.jpg",
+            "Facture_2026-03-15_p2.jpg"
+        ]
+    );
+    assert_eq!(
+        fs::read_to_string(sandbox.root.join("Facture_2026-03-15_p1.jpg")).unwrap(),
+        "image-1-150"
+    );
+}
+
+#[test]
+fn converts_an_image_into_a_pdf() {
+    let sandbox = sandbox();
+    let workflow = workflow(json!([
+        { "type": "rename", "template": "Scan.jpg" },
+        { "type": "convert", "to": "pdf" }
+    ]));
+
+    let run = run(&StdFileSystem, &sandbox, &workflow);
+
+    assert_eq!(run.failure, None);
+    assert_eq!(sandbox.names(""), ["Scan.jpg", "Scan.pdf"]);
+    assert_eq!(
+        fs::read_to_string(sandbox.root.join("Scan.pdf")).unwrap(),
+        "pdf:1"
+    );
+    assert_eq!(run.location, sandbox.root.join("Scan.jpg"));
+}
+
+#[test]
+fn refuses_a_conversion_between_unsupported_formats() {
+    let cases = [
+        json!([{ "type": "convert", "to": "pdf" }]),
+        json!([
+            { "type": "rename", "template": "Notes.docx" },
+            { "type": "convert", "to": "png" }
+        ]),
+        json!([
+            { "type": "rename", "template": "Photo.png" },
+            { "type": "convert", "to": "jpeg" }
+        ]),
+    ];
+    for actions in cases {
+        let sandbox = sandbox();
+
+        let run = run(&StdFileSystem, &sandbox, &workflow(actions));
+
+        assert_eq!(run.failure, Some(FailureCode::UnsupportedConversion));
+        assert_eq!(sandbox.names(""), [NAME], "tout est annulé");
+    }
+}
+
+#[test]
+fn removes_the_pages_already_written_when_a_conversion_fails() {
+    let sandbox = sandbox();
+    let converter = FakeConverter {
+        pages: 5,
+        fail_at_page: Some(3),
+        ..FakeConverter::default()
+    };
+
+    let run = run_with(
+        &StdFileSystem,
+        &converter,
+        &sandbox,
+        &workflow(json!([{ "type": "convert", "to": "png" }])),
+    );
+
+    assert_eq!(run.failure, Some(FailureCode::DocumentUnreadable));
+    assert_eq!(run.log.error.as_deref(), Some("document_unreadable"));
+    assert_eq!(sandbox.names(""), [NAME]);
+    assert!(run.log.actions[0].operations.is_empty());
+}
+
+#[test]
+fn rolls_back_a_conversion_when_a_later_action_fails() {
+    let sandbox = sandbox();
+    let workflow = workflow(json!([
+        { "type": "convert", "to": "png" },
+        { "type": "move", "destination": sandbox.root.join("absent") }
+    ]));
+
+    let run = run(&StdFileSystem, &sandbox, &workflow);
+
+    assert_eq!(run.failure, Some(FailureCode::DestinationMissing));
+    assert_eq!(
+        statuses(&run),
+        [ActionStatus::RolledBack, ActionStatus::Failed]
+    );
+    assert_eq!(sandbox.names(""), [NAME]);
+}
+
+#[test]
+fn refuses_a_document_larger_than_the_converter_accepts() {
+    let sandbox = sandbox();
+    let converter = FakeConverter {
+        max_input_bytes: 4,
+        ..FakeConverter::default()
+    };
+
+    let run = run_with(
+        &StdFileSystem,
+        &converter,
+        &sandbox,
+        &workflow(json!([{ "type": "convert", "to": "png" }])),
+    );
+
+    assert_eq!(run.failure, Some(FailureCode::DocumentTooLarge));
+    assert_eq!(sandbox.names(""), [NAME]);
+}
+
+#[test]
+fn simulates_a_conversion_without_writing() {
+    let sandbox = sandbox();
+    let dry = DryRunFileSystem::new(StdFileSystem);
+
+    let run = run(
+        &dry,
+        &sandbox,
+        &workflow(json!([{ "type": "convert", "to": "png" }])),
+    );
+
+    assert_eq!(run.failure, None);
+    assert_eq!(run.log.actions[0].operations.len(), 2);
+    assert!(dry.exists(&sandbox.root.join("Facture_2026-03-15_p2.png")));
+    assert_eq!(sandbox.names(""), [NAME]);
 }

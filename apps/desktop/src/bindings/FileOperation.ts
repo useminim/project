@@ -12,7 +12,8 @@ export type FileOperation = {
  */
 kind: OperationKind, 
 /**
- * Emplacement d'origine (pour une copie : le fichier copié).
+ * Emplacement d'origine (pour une copie ou une conversion : le fichier
+ * de départ).
  */
 from: string, 
 /**

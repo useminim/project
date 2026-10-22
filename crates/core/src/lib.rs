@@ -20,7 +20,9 @@ pub mod trigger;
 pub mod waiting_zone;
 pub mod workflow;
 
-pub use action::{Action, ActionKind, ConvertFormat, ExportFormat};
+pub use action::{
+    Action, ActionKind, ConvertFormat, DEFAULT_DPI, DEFAULT_JPEG_QUALITY, DPI_RANGE, ExportFormat,
+};
 pub use document::{
     ContentHash, ContentHashError, Document, DocumentOrigin, DocumentStatus, DocumentSummary,
     StatusTransitionError,

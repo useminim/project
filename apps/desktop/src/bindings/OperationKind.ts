@@ -3,4 +3,4 @@
 /**
  * Nature d'une opération sur un fichier.
  */
-export type OperationKind = "rename" | "move" | "copy";
+export type OperationKind = "rename" | "move" | "copy" | "convert";
