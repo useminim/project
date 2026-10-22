@@ -116,11 +116,6 @@ prefixed_id!(
     "org"
 );
 prefixed_id!(
-    /// Identifiant d'un dossier surveillé (`fld_…`).
-    FolderId,
-    "fld"
-);
-prefixed_id!(
     /// Identifiant d'un profil appris à partir de documents exemples (`prf_…`).
     ProfileId,
     "prf"

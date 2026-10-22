@@ -25,7 +25,7 @@ pub use document::{
 };
 pub use execution::{ActionRecord, ActionStatus, ExecutionLog, ExecutionStatus};
 pub use field::{FieldName, FieldNameError};
-pub use id::{DocumentId, FolderId, IdError, OrganizationId, ProfileId, RunId, UserId, WorkflowId};
+pub use id::{DocumentId, IdError, OrganizationId, ProfileId, RunId, UserId, WorkflowId};
 pub use profile::{DetectedField, DocumentProfile, FileInfo, TextSource};
 pub use redacted::{REDACTED, Redacted};
 pub use template::{Segment, Template, TemplateError};

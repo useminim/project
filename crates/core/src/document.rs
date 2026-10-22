@@ -14,7 +14,7 @@ use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
-use crate::id::{DocumentId, FolderId};
+use crate::id::DocumentId;
 use crate::ports::DocumentKind;
 
 /// Empreinte SHA-256 du contenu d'un fichier, pour reconnaître un document
@@ -105,11 +105,6 @@ impl<'de> Deserialize<'de> for ContentHash {
 pub enum DocumentOrigin {
     /// Fichier choisi ou déposé par l'utilisateur.
     Manual,
-    /// Fichier apparu dans un dossier surveillé.
-    WatchedFolder {
-        /// Dossier surveillé.
-        folder_id: FolderId,
-    },
     /// Impression reçue par l'imprimante virtuelle.
     Printer,
 }
@@ -427,16 +422,11 @@ mod tests {
 
     #[test]
     fn serializes_the_origin_with_a_type_tag() {
-        let origin = DocumentOrigin::WatchedFolder {
-            folder_id: "fld_01J8ZK3V9Q4X7M2N5P6R8T0W1Y".parse().unwrap(),
-        };
+        let origin = DocumentOrigin::Manual;
 
         let value = serde_json::to_value(origin).unwrap();
 
-        assert_eq!(
-            value,
-            json!({ "type": "watched_folder", "folder_id": "fld_01J8ZK3V9Q4X7M2N5P6R8T0W1Y" })
-        );
+        assert_eq!(value, json!({ "type": "manual" }));
         assert_eq!(
             serde_json::from_value::<DocumentOrigin>(value).unwrap(),
             origin
