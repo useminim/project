@@ -1,14 +1,45 @@
+# Mises à jour des dépendances, regroupées pour limiter le nombre de PR.
+#
+# - Une PR par semaine et par écosystème pour les mises à jour mineures et
+#   correctives ; les mises à jour majeures restent des PR individuelles, à
+#   examiner une par une.
+# - Tauri a son propre groupe dans Cargo et dans npm, le même jour : la CLI
+#   Tauri refuse de démarrer si la crate `tauri` et `@tauri-apps/api` n'ont pas
+#   la même version mineure, donc les deux PR Tauri se mergent ensemble.
+# - Dans un écosystème, une dépendance va dans le premier groupe qui la
+#   reconnaît.
+
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns: ["*"]
+
   - package-ecosystem: cargo
     directory: /
     schedule:
       interval: weekly
+      day: monday
+    groups:
+      tauri:
+        patterns: ["tauri", "tauri-*"]
+      rust-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      tauri:
+        patterns: ["@tauri-apps/*"]
+      js-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
