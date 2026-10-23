@@ -29,4 +29,12 @@ max_depth: number, } | { "code": "empty_search_text" } | { "code": "empty_date_f
 /**
  * Extension refusée.
  */
-extension: string, } | { "code": "zero_min_rows" } | { "code": "threshold_out_of_range" } | { "code": "no_actions" } | { "code": "path_separator_in_name" } | { "code": "empty_destination" } | { "code": "relative_destination" } | { "code": "no_fields_to_extract" });
+extension: string, } | { "code": "zero_min_rows" } | { "code": "threshold_out_of_range" } | { "code": "no_actions" } | { "code": "path_separator_in_name" } | { "code": "empty_destination" } | { "code": "relative_destination" } | { "code": "no_fields_to_extract" } | { "code": "dpi_out_of_range", 
+/**
+ * Résolution minimale.
+ */
+min: number, 
+/**
+ * Résolution maximale.
+ */
+max: number, } | { "code": "quality_out_of_range" } | { "code": "unused_convert_option" });

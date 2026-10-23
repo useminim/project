@@ -27,7 +27,17 @@ destination: string, } | { "type": "convert",
 /**
  * Format cible.
  */
-to: ConvertFormat, } | { "type": "extract_fields", 
+to: ConvertFormat, 
+/**
+ * Résolution des images produites, en points par pouce
+ * ([`DEFAULT_DPI`] si absente). Seulement vers PNG ou JPEG.
+ */
+dpi?: number, 
+/**
+ * Qualité JPEG, de 1 à 100 ([`DEFAULT_JPEG_QUALITY`] si absente).
+ * Seulement vers JPEG.
+ */
+quality?: number, } | { "type": "extract_fields", 
 /**
  * Champs à extraire.
  */

@@ -4,6 +4,7 @@
 //! imprimante) vivent dans d'autres crates ; `minim-core` ne connaît que ces
 //! traits. Tous sont `Send + Sync` et utilisables derrière `Arc<dyn …>`.
 
+pub mod convert;
 pub mod filesystem;
 pub mod ocr;
 pub mod printer;
@@ -12,6 +13,7 @@ pub mod store;
 pub mod sync;
 pub mod time;
 
+pub use convert::{ConvertError, DocumentConverter, ImageFormat, RenderOptions};
 pub use filesystem::{DryRunFileSystem, FileMetadata, FileSystem, StdFileSystem};
 pub use ocr::{Language, OcrEngine, OcrError, PageImage};
 pub use printer::{CapturedJob, JobSink, PrintCapture, PrinterError};
@@ -41,6 +43,7 @@ mod tests {
     #[test]
     fn every_port_is_object_safe_and_shareable() {
         assert_shareable::<Arc<dyn DocumentReader>>();
+        assert_shareable::<Arc<dyn DocumentConverter>>();
         assert_shareable::<Arc<dyn OcrEngine>>();
         assert_shareable::<Arc<dyn WorkflowRepository>>();
         assert_shareable::<Arc<dyn DocumentRepository>>();

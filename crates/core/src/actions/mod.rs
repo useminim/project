@@ -7,7 +7,7 @@ pub mod render;
 pub mod sanitize;
 
 pub use execute::{
-    ChainRun, ExecutionRequest, FailureCode, WorkflowRun, run_chain, run_workflow, undo,
+    ChainRun, ExecutionRequest, FailureCode, Tools, WorkflowRun, run_chain, run_workflow, undo,
 };
 pub use render::{DEFAULT_DATE_FORMAT, RenderContext, RenderError, format_date, render};
 pub use sanitize::{EmptyFileName, MAX_NAME_BYTES, sanitize_file_name, with_collision_suffix};

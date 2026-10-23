@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::action::Action;
+use crate::action::{Action, ConvertFormat, DPI_RANGE};
 use crate::id::{OrganizationId, UserId, WorkflowId};
 use crate::matching::DateFormat;
 use crate::trigger::{Condition, Trigger};
@@ -169,6 +169,21 @@ pub enum ValidationErrorKind {
     /// Une extraction ne liste aucun champ.
     #[error("aucun champ à extraire")]
     NoFieldsToExtract,
+    /// La résolution d'une conversion sort des valeurs acceptées.
+    #[error("la résolution doit être comprise entre {min} et {max} points par pouce")]
+    DpiOutOfRange {
+        /// Résolution minimale.
+        min: u16,
+        /// Résolution maximale.
+        max: u16,
+    },
+    /// La qualité JPEG n'est pas comprise entre 1 et 100.
+    #[error("la qualité doit être comprise entre 1 et 100")]
+    QualityOutOfRange,
+    /// Un réglage de conversion ne s'applique pas au format cible (résolution
+    /// vers PDF, qualité vers PNG ou PDF).
+    #[error("ce réglage ne s'applique pas à ce format")]
+    UnusedConvertOption,
 }
 
 /// Profondeur maximale des conditions : le niveau du déclencheur compte pour 1,
@@ -336,7 +351,25 @@ fn validate_action(path: &str, action: &Action, errors: &mut Vec<ValidationError
                 push(Kind::RelativeDestination);
             }
         }
-        Action::Convert { .. } => {}
+        Action::Convert { to, dpi, quality } => {
+            if let Some(dpi) = dpi {
+                if *to == ConvertFormat::Pdf {
+                    push(Kind::UnusedConvertOption);
+                } else if !DPI_RANGE.contains(dpi) {
+                    push(Kind::DpiOutOfRange {
+                        min: *DPI_RANGE.start(),
+                        max: *DPI_RANGE.end(),
+                    });
+                }
+            }
+            if let Some(quality) = quality {
+                if *to != ConvertFormat::Jpeg {
+                    push(Kind::UnusedConvertOption);
+                } else if !(1..=100).contains(quality) {
+                    push(Kind::QualityOutOfRange);
+                }
+            }
+        }
         Action::ExtractFields { fields, .. } => {
             if fields.is_empty() {
                 push(Kind::NoFieldsToExtract);
@@ -535,6 +568,30 @@ mod tests {
                 error("actions[2]", Kind::EmptyDestination),
                 error("actions[3]", Kind::EmptyDestination),
                 error("actions[4]", Kind::NoFieldsToExtract),
+            ])
+        );
+    }
+
+    #[test]
+    fn checks_conversion_settings() {
+        let workflow = actions(json!([
+            { "type": "convert", "to": "png", "dpi": 150 },
+            { "type": "convert", "to": "jpeg", "dpi": 600, "quality": 100 },
+            { "type": "convert", "to": "png", "dpi": 71 },
+            { "type": "convert", "to": "jpeg", "dpi": 601, "quality": 0 },
+            { "type": "convert", "to": "pdf", "dpi": 150 },
+            { "type": "convert", "to": "png", "quality": 80 }
+        ]));
+        let dpi = Kind::DpiOutOfRange { min: 72, max: 600 };
+
+        assert_eq!(
+            workflow.validate(),
+            Err(vec![
+                error("actions[2]", dpi.clone()),
+                error("actions[3]", dpi),
+                error("actions[3]", Kind::QualityOutOfRange),
+                error("actions[4]", Kind::UnusedConvertOption),
+                error("actions[5]", Kind::UnusedConvertOption),
             ])
         );
     }

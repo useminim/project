@@ -2,8 +2,8 @@
 //! `test-support`.
 //!
 //! - [`memory`] : dépôts en mémoire ;
-//! - [`FixedClock`], [`SequentialIds`], [`StaticReader`] : horloge,
-//!   identifiants et lecteur déterministes ;
+//! - [`FixedClock`], [`SequentialIds`], [`StaticReader`], [`FakeConverter`] :
+//!   horloge, identifiants, lecteur et convertisseur déterministes ;
 //! - [`contracts`] : comportement attendu de toute implémentation des dépôts,
 //!   à appeler depuis les tests de chaque implémentation ;
 //! - [`samples`] : workflows, exécutions, documents et entrées de zone
@@ -20,8 +20,8 @@ use chrono::{DateTime, Duration, Utc};
 use ulid::Ulid;
 
 use crate::ports::{
-    Clock, DocumentKind, DocumentMetadata, DocumentReader, IdGenerator, Page, PageText,
-    RawDocument, ReadError,
+    Clock, ConvertError, DocumentConverter, DocumentKind, DocumentMetadata, DocumentReader,
+    IdGenerator, Page, PageText, RawDocument, ReadError, RenderOptions,
 };
 
 /// Horloge arrêtée, avancée à la main.
@@ -184,5 +184,62 @@ mod tests {
             reader.read(b"%PDF", DocumentKind::Pdf),
             Err(ReadError::Encrypted)
         ));
+    }
+}
+
+/// Convertisseur factice : chaque PDF a `pages` pages, rendues en
+/// `image-{n}-{dpi}` ; un assemblage d'images produit `pdf:{nombre d'images}`.
+#[derive(Debug, Clone)]
+pub struct FakeConverter {
+    /// Nombre de pages de chaque PDF.
+    pub pages: u32,
+    /// Page à laquelle le rendu échoue (document endommagé), si renseignée.
+    pub fail_at_page: Option<u32>,
+    /// Taille maximale acceptée, en octets.
+    pub max_input_bytes: u64,
+}
+
+impl Default for FakeConverter {
+    fn default() -> Self {
+        Self {
+            pages: 2,
+            fail_at_page: None,
+            max_input_bytes: u64::MAX,
+        }
+    }
+}
+
+impl DocumentConverter for FakeConverter {
+    fn max_input_bytes(&self) -> u64 {
+        self.max_input_bytes
+    }
+
+    fn pdf_to_images(
+        &self,
+        _pdf: &[u8],
+        options: RenderOptions,
+        page: &mut dyn FnMut(u32, Vec<u8>) -> std::io::Result<()>,
+    ) -> Result<u32, ConvertError> {
+        for number in 1..=self.pages {
+            if self.fail_at_page == Some(number) {
+                return Err(ReadError::Corrupted.into());
+            }
+            page(
+                number,
+                format!("image-{number}-{}", options.dpi).into_bytes(),
+            )
+            .map_err(ConvertError::Output)?;
+        }
+        Ok(self.pages)
+    }
+
+    fn images_to_pdf(&self, images: &[(DocumentKind, &[u8])]) -> Result<Vec<u8>, ConvertError> {
+        if let Some((kind, _)) = images
+            .iter()
+            .find(|(kind, _)| !matches!(kind, DocumentKind::Png | DocumentKind::Jpeg))
+        {
+            return Err(ReadError::Unsupported(*kind).into());
+        }
+        Ok(format!("pdf:{}", images.len()).into_bytes())
     }
 }

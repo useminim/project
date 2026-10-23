@@ -62,6 +62,21 @@ pub trait FileSystem: Send + Sync {
     /// `ErrorKind::AlreadyExists` si `to` existe ; rien n'est alors écrit.
     fn copy_new(&self, from: &Path, to: &Path) -> io::Result<()>;
 
+    /// Crée le fichier `path` avec `content`, exclusivement, puis force
+    /// l'écriture sur le disque.
+    ///
+    /// # Erreurs
+    ///
+    /// `ErrorKind::AlreadyExists` si `path` existe ; rien n'est alors écrit.
+    fn write_new(&self, path: &Path, content: &[u8]) -> io::Result<()>;
+
+    /// Lit tout le contenu du fichier `path`.
+    ///
+    /// # Erreurs
+    ///
+    /// Renvoie une erreur si le fichier ne peut pas être lu.
+    fn read(&self, path: &Path) -> io::Result<Vec<u8>>;
+
     /// Supprime le fichier `path`.
     ///
     /// # Erreurs
@@ -122,6 +137,26 @@ impl FileSystem for StdFileSystem {
         result
     }
 
+    fn write_new(&self, path: &Path, content: &[u8]) -> io::Result<()> {
+        let mut target = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)?;
+        let result = target
+            .write_all(content)
+            .and_then(|()| target.flush())
+            .and_then(|()| target.sync_all());
+        if result.is_err() {
+            drop(target);
+            let _ = fs::remove_file(path);
+        }
+        result
+    }
+
+    fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
+        fs::read(path)
+    }
+
     fn remove_file(&self, path: &Path) -> io::Result<()> {
         fs::remove_file(path)
     }
@@ -153,10 +188,19 @@ pub struct DryRunFileSystem<F = StdFileSystem> {
     overlay: Mutex<Overlay>,
 }
 
+/// Contenu d'un fichier simulé.
+#[derive(Debug, Clone)]
+enum Simulated {
+    /// Même contenu que ce fichier réel.
+    SameAs(PathBuf),
+    /// Contenu écrit depuis la mémoire : seules sa taille et son empreinte
+    /// sont gardées.
+    Written { size: u64, fingerprint: Fingerprint },
+}
+
 #[derive(Debug, Default)]
 struct Overlay {
-    /// Fichiers simulés, avec le fichier réel dont ils ont le contenu.
-    created: HashMap<PathBuf, PathBuf>,
+    created: HashMap<PathBuf, Simulated>,
     removed: HashSet<PathBuf>,
     directories: HashSet<PathBuf>,
 }
@@ -174,8 +218,8 @@ impl<F: FileSystem> DryRunFileSystem<F> {
         self.overlay.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
-    /// Fichier réel qui fournit le contenu de `path`.
-    fn origin(&self, path: &Path) -> io::Result<PathBuf> {
+    /// Contenu actuel de `path` dans la simulation.
+    fn content(&self, path: &Path) -> io::Result<Simulated> {
         let overlay = self.overlay();
         if overlay.removed.contains(path) {
             return Err(io::ErrorKind::NotFound.into());
@@ -184,19 +228,25 @@ impl<F: FileSystem> DryRunFileSystem<F> {
             .created
             .get(path)
             .cloned()
-            .unwrap_or_else(|| path.to_owned()))
+            .unwrap_or_else(|| Simulated::SameAs(path.to_owned())))
+    }
+
+    fn insert(&self, path: &Path, content: Simulated) -> io::Result<()> {
+        if self.exists(path) {
+            return Err(io::ErrorKind::AlreadyExists.into());
+        }
+        let mut overlay = self.overlay();
+        overlay.removed.remove(path);
+        overlay.created.insert(path.to_owned(), content);
+        Ok(())
     }
 
     fn create(&self, from: &Path, to: &Path) -> io::Result<()> {
-        if self.exists(to) {
-            return Err(io::ErrorKind::AlreadyExists.into());
+        let content = self.content(from)?;
+        if let Simulated::SameAs(origin) = &content {
+            self.disk.metadata(origin)?;
         }
-        let origin = self.origin(from)?;
-        self.disk.metadata(&origin)?;
-        let mut overlay = self.overlay();
-        overlay.removed.remove(to);
-        overlay.created.insert(to.to_owned(), origin);
-        Ok(())
+        self.insert(to, content)
     }
 }
 
@@ -209,7 +259,14 @@ impl<F: FileSystem> FileSystem for DryRunFileSystem<F> {
                 is_file: false,
             });
         }
-        self.disk.metadata(&self.origin(path)?)
+        match self.content(path)? {
+            Simulated::SameAs(origin) => self.disk.metadata(&origin),
+            Simulated::Written { size, .. } => Ok(FileMetadata {
+                size,
+                modified: None,
+                is_file: true,
+            }),
+        }
     }
 
     fn create_dir_all(&self, path: &Path) -> io::Result<()> {
@@ -228,8 +285,28 @@ impl<F: FileSystem> FileSystem for DryRunFileSystem<F> {
         self.create(from, to)
     }
 
+    fn write_new(&self, path: &Path, content: &[u8]) -> io::Result<()> {
+        self.insert(
+            path,
+            Simulated::Written {
+                size: u64::try_from(content.len()).unwrap_or(u64::MAX),
+                fingerprint: Fingerprint::of(content),
+            },
+        )
+    }
+
+    fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
+        match self.content(path)? {
+            Simulated::SameAs(origin) => self.disk.read(&origin),
+            Simulated::Written { .. } => Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "contenu simulé, non conservé",
+            )),
+        }
+    }
+
     fn remove_file(&self, path: &Path) -> io::Result<()> {
-        self.origin(path)?;
+        self.content(path)?;
         let mut overlay = self.overlay();
         overlay.created.remove(path);
         overlay.removed.insert(path.to_owned());
@@ -237,7 +314,10 @@ impl<F: FileSystem> FileSystem for DryRunFileSystem<F> {
     }
 
     fn fingerprint(&self, path: &Path) -> io::Result<Fingerprint> {
-        self.disk.fingerprint(&self.origin(path)?)
+        match self.content(path)? {
+            Simulated::SameAs(origin) => self.disk.fingerprint(&origin),
+            Simulated::Written { fingerprint, .. } => Ok(fingerprint),
+        }
     }
 }
 
@@ -280,6 +360,39 @@ mod tests {
             // `printf contenu | sha256sum`
             "3016ef88e3166466281c563b984abed5412a2de823d37ed99c2af39be422fab1"
         );
+    }
+
+    #[test]
+    fn writes_a_new_file_without_overwriting() {
+        let dir = tempfile::tempdir().unwrap();
+        let page = dir.path().join("page.png");
+        let disk = StdFileSystem;
+
+        disk.write_new(&page, b"image").unwrap();
+
+        assert_eq!(disk.read(&page).unwrap(), b"image");
+        assert_eq!(disk.fingerprint(&page).unwrap(), Fingerprint::of(b"image"));
+        assert_eq!(
+            disk.write_new(&page, b"autre").unwrap_err().kind(),
+            io::ErrorKind::AlreadyExists
+        );
+        assert_eq!(disk.read(&page).unwrap(), b"image");
+
+        let dry = DryRunFileSystem::new(StdFileSystem);
+        let simulated = dir.path().join("simulee.png");
+        dry.write_new(&simulated, b"image").unwrap();
+        assert_eq!(dry.metadata(&simulated).unwrap().size, 5);
+        assert_eq!(
+            dry.fingerprint(&simulated).unwrap(),
+            Fingerprint::of(b"image")
+        );
+        assert_eq!(
+            dry.write_new(&page, b"autre").unwrap_err().kind(),
+            io::ErrorKind::AlreadyExists
+        );
+        dry.remove_file(&simulated).unwrap();
+        assert!(!dry.exists(&simulated));
+        assert!(!simulated.exists());
     }
 
     #[test]

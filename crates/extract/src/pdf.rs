@@ -1,21 +1,11 @@
 //! Lecture des PDF avec PDFium (D-34).
 //!
-//! PDFium ne peut être chargé qu'une fois par processus et n'est pas sûr
-//! entre fils : un fil dédié possède l'unique instance et traite les lectures
-//! une par une. [`PdfReader`] lui envoie les documents et attend la réponse,
-//! dans la limite de durée configurée.
-//!
-//! Une panique de `pdfium-render` est rattrapée et devient
-//! [`ReadError::Corrupted`]. Un crash du code C++ de PDFium, lui, arrête le
-//! processus : la lecture devra se faire dans un processus séparé (prompt 30).
-//!
-//! Les erreurs ne contiennent ni chemin ni contenu de document.
+//! [`PdfReader`] confie les documents au fil PDFium (voir `worker`) et attend
+//! la réponse, dans la limite de durée configurée. Les erreurs ne contiennent
+//! ni chemin ni contenu de document.
 
-use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
-use std::sync::OnceLock;
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
-use std::thread;
 use std::time::Duration;
 
 use chrono::{DateTime, FixedOffset, NaiveDate, TimeZone as _, Utc};
@@ -30,14 +20,16 @@ use pdfium_render::prelude::{
 };
 use thiserror::Error;
 
-/// Limites de lecture d'un PDF.
+use crate::worker::{self, Job};
+
+/// Limites de traitement d'un PDF (lecture et conversion).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PdfLimits {
     /// Taille maximale du fichier, en octets.
     pub max_bytes: u64,
     /// Nombre maximal de pages.
     pub max_pages: u32,
-    /// Durée maximale d'une lecture.
+    /// Durée maximale d'une lecture, ou du rendu d'une page.
     pub timeout: Duration,
 }
 
@@ -52,54 +44,31 @@ impl Default for PdfLimits {
     }
 }
 
+impl PdfLimits {
+    /// Erreur si `bytes` dépasse la taille maximale.
+    pub(crate) fn check_size(&self, bytes: &[u8]) -> Result<(), ReadError> {
+        if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > self.max_bytes {
+            return Err(ReadError::TooLarge {
+                limit_bytes: self.max_bytes,
+            });
+        }
+        Ok(())
+    }
+}
+
 /// La bibliothèque PDFium n'a pas pu être chargée.
 #[derive(Debug, Clone, Error)]
 #[error("bibliothèque PDFium introuvable ou incompatible")]
 pub struct LibraryUnavailable;
 
-/// Le fil de lecture s'est arrêté.
+/// Le fil PDFium s'est arrêté.
 #[derive(Debug, Clone, Error)]
-#[error("le fil de lecture des PDF s'est arrêté")]
-struct WorkerStopped;
+#[error("le fil de traitement des PDF s'est arrêté")]
+pub(crate) struct WorkerStopped;
 
-struct Job {
-    bytes: Vec<u8>,
-    max_pages: u32,
-    reply: Sender<Result<RawDocument, ReadError>>,
-}
-
-/// Fil qui possède l'unique instance de PDFium du processus.
-static WORKER: OnceLock<Result<Sender<Job>, LibraryUnavailable>> = OnceLock::new();
-
-fn start_worker(library_dir: &Path) -> Result<Sender<Job>, LibraryUnavailable> {
-    let library = Pdfium::pdfium_platform_library_name_at_path(library_dir);
-    let (ready_tx, ready_rx) = mpsc::channel();
-    let (jobs_tx, jobs_rx) = mpsc::channel::<Job>();
-    thread::Builder::new()
-        .name("minim-pdfium".to_owned())
-        .spawn(move || {
-            let pdfium = match Pdfium::bind_to_library(library) {
-                Ok(bindings) => Pdfium::new(bindings),
-                Err(_) => {
-                    let _ = ready_tx.send(false);
-                    return;
-                }
-            };
-            let _ = ready_tx.send(true);
-            for job in jobs_rx {
-                let result = catch_unwind(AssertUnwindSafe(|| {
-                    parse(&pdfium, &job.bytes, job.max_pages)
-                }))
-                .unwrap_or(Err(ReadError::Corrupted));
-                // Le demandeur a pu abandonner (délai dépassé) : sans effet.
-                let _ = job.reply.send(result);
-            }
-        })
-        .map_err(|_| LibraryUnavailable)?;
-    match ready_rx.recv() {
-        Ok(true) => Ok(jobs_tx),
-        _ => Err(LibraryUnavailable),
-    }
+/// File du fil PDFium, ou [`ReadError::Unavailable`].
+pub(crate) fn connect(library_dir: &Path) -> Result<Sender<Job>, ReadError> {
+    worker::jobs(library_dir).map_err(|error| ReadError::Unavailable(Box::new(error)))
 }
 
 /// Lecteur de PDF.
@@ -120,11 +89,10 @@ impl PdfReader {
     /// Renvoie [`ReadError::Unavailable`] si la bibliothèque ne peut pas être
     /// chargée.
     pub fn start(library_dir: &Path, limits: PdfLimits) -> Result<Self, ReadError> {
-        let jobs = WORKER
-            .get_or_init(|| start_worker(library_dir))
-            .clone()
-            .map_err(|error| ReadError::Unavailable(Box::new(error)))?;
-        Ok(Self { jobs, limits })
+        Ok(Self {
+            jobs: connect(library_dir)?,
+            limits,
+        })
     }
 
     /// Limites appliquées par ce lecteur.
@@ -143,14 +111,10 @@ impl DocumentReader for PdfReader {
         if kind != DocumentKind::Pdf {
             return Err(ReadError::Unsupported(kind));
         }
-        if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > self.limits.max_bytes {
-            return Err(ReadError::TooLarge {
-                limit_bytes: self.limits.max_bytes,
-            });
-        }
+        self.limits.check_size(bytes)?;
         let (reply, response) = mpsc::channel();
         self.jobs
-            .send(Job {
+            .send(Job::Read {
                 bytes: bytes.to_vec(),
                 max_pages: self.limits.max_pages,
                 reply,
@@ -159,7 +123,7 @@ impl DocumentReader for PdfReader {
         match response.recv_timeout(self.limits.timeout) {
             Ok(result) => result,
             // Le fil reste occupé par ce document : seul un processus séparé
-            // (prompt 30) permettra de l'interrompre.
+            // (prompt 13a) permettra de l'interrompre.
             Err(RecvTimeoutError::Timeout) => Err(ReadError::Timeout),
             Err(RecvTimeoutError::Disconnected) => {
                 Err(ReadError::Unavailable(Box::new(WorkerStopped)))
@@ -168,7 +132,7 @@ impl DocumentReader for PdfReader {
     }
 }
 
-fn map_error(error: &PdfiumError) -> ReadError {
+pub(crate) fn map_error(error: &PdfiumError) -> ReadError {
     match error {
         PdfiumError::PdfiumLibraryInternalError(
             PdfiumInternalError::PasswordError | PdfiumInternalError::SecurityError,
@@ -177,7 +141,12 @@ fn map_error(error: &PdfiumError) -> ReadError {
     }
 }
 
-fn parse(pdfium: &Pdfium, bytes: &[u8], max_pages: u32) -> Result<RawDocument, ReadError> {
+/// Ouvre un PDF et vérifie son nombre de pages.
+pub(crate) fn open<'a>(
+    pdfium: &'a Pdfium,
+    bytes: &'a [u8],
+    max_pages: u32,
+) -> Result<PdfDocument<'a>, ReadError> {
     let document = pdfium
         .load_pdf_from_byte_slice(bytes, None)
         .map_err(|error| map_error(&error))?;
@@ -185,6 +154,15 @@ fn parse(pdfium: &Pdfium, bytes: &[u8], max_pages: u32) -> Result<RawDocument, R
     if count > max_pages {
         return Err(ReadError::TooManyPages { limit: max_pages });
     }
+    Ok(document)
+}
+
+pub(crate) fn parse(
+    pdfium: &Pdfium,
+    bytes: &[u8],
+    max_pages: u32,
+) -> Result<RawDocument, ReadError> {
+    let document = open(pdfium, bytes, max_pages)?;
     let metadata = metadata(&document);
     let pages = document
         .pages()

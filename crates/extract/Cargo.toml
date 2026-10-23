@@ -1,6 +1,6 @@
 [package]
 name = "minim-extract"
-description = "minim document readers (PDF with PDFium)"
+description = "minim document readers and converters (PDF with PDFium)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,9 +8,15 @@ publish.workspace = true
 
 [dependencies]
 chrono.workspace = true
+image.workspace = true
 minim-core.workspace = true
 pdfium-render.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+minim-core = { workspace = true, features = ["test-support"] }
+serde_json.workspace = true
+tempfile.workspace = true
 
 [lints]
 workspace = true
