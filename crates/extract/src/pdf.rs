@@ -1,18 +1,16 @@
 //! Lecture des PDF avec PDFium (D-34).
 //!
-//! [`PdfReader`] confie les documents au fil PDFium (voir `worker`) et attend
-//! la réponse, dans la limite de durée configurée. Les erreurs ne contiennent
-//! ni chemin ni contenu de document.
+//! [`PdfReader`] confie les documents au processus PDFium ([`PdfWorker`]),
+//! qui les lit avec les fonctions de ce module. Les erreurs ne contiennent ni
+//! chemin ni contenu de document.
 
-use std::path::Path;
-use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::time::Duration;
 
 use chrono::{DateTime, FixedOffset, NaiveDate, TimeZone as _, Utc};
 use minim_core::Redacted;
 use minim_core::ports::{
-    DocumentKind, DocumentMetadata, DocumentReader, Page, PageText, RawDocument, ReadError, Rect,
-    TextSpan,
+    ConvertError, DocumentKind, DocumentMetadata, DocumentReader, Page, PageText, RawDocument,
+    ReadError, Rect, TextSpan,
 };
 use pdfium_render::prelude::{
     PdfDocument, PdfDocumentMetadataTagType, PdfPage, PdfRect, PdfSecurityHandlerRevision, Pdfium,
@@ -20,7 +18,8 @@ use pdfium_render::prelude::{
 };
 use thiserror::Error;
 
-use crate::worker::{self, Job};
+use crate::process::{PdfWorker, Step, unexpected};
+use crate::wire::{Request, Response};
 
 /// Limites de traitement d'un PDF (lecture et conversion).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -31,15 +30,18 @@ pub struct PdfLimits {
     pub max_pages: u32,
     /// Durée maximale d'une lecture, ou du rendu d'une page.
     pub timeout: Duration,
+    /// Mémoire maximale du processus PDFium, en octets.
+    pub max_memory: u64,
 }
 
 impl Default for PdfLimits {
-    /// 200 Mo, 2 000 pages, 60 secondes.
+    /// 200 Mo, 2 000 pages, 60 secondes, 2 Gio de mémoire.
     fn default() -> Self {
         Self {
             max_bytes: 200 * 1024 * 1024,
             max_pages: 2000,
             timeout: Duration::from_secs(60),
+            max_memory: 2 * 1024 * 1024 * 1024,
         }
     }
 }
@@ -61,44 +63,23 @@ impl PdfLimits {
 #[error("bibliothèque PDFium introuvable ou incompatible")]
 pub struct LibraryUnavailable;
 
-/// Le fil PDFium s'est arrêté.
-#[derive(Debug, Clone, Error)]
-#[error("le fil de traitement des PDF s'est arrêté")]
-pub(crate) struct WorkerStopped;
-
-/// File du fil PDFium, ou [`ReadError::Unavailable`].
-pub(crate) fn connect(library_dir: &Path) -> Result<Sender<Job>, ReadError> {
-    worker::jobs(library_dir).map_err(|error| ReadError::Unavailable(Box::new(error)))
-}
-
 /// Lecteur de PDF.
 #[derive(Debug, Clone)]
 pub struct PdfReader {
-    jobs: Sender<Job>,
-    limits: PdfLimits,
+    worker: PdfWorker,
 }
 
 impl PdfReader {
-    /// Démarre le lecteur avec la bibliothèque PDFium du dossier
-    /// `library_dir` (ressources de l'application). La bibliothèque n'est
-    /// chargée qu'une fois par processus : les appels suivants réutilisent la
-    /// même instance, quel que soit le dossier donné.
-    ///
-    /// # Erreurs
-    ///
-    /// Renvoie [`ReadError::Unavailable`] si la bibliothèque ne peut pas être
-    /// chargée.
-    pub fn start(library_dir: &Path, limits: PdfLimits) -> Result<Self, ReadError> {
-        Ok(Self {
-            jobs: connect(library_dir)?,
-            limits,
-        })
+    /// Lecteur qui confie les documents à `worker`.
+    #[must_use]
+    pub const fn new(worker: PdfWorker) -> Self {
+        Self { worker }
     }
 
     /// Limites appliquées par ce lecteur.
     #[must_use]
-    pub const fn limits(&self) -> PdfLimits {
-        self.limits
+    pub fn limits(&self) -> PdfLimits {
+        self.worker.limits()
     }
 }
 
@@ -111,24 +92,21 @@ impl DocumentReader for PdfReader {
         if kind != DocumentKind::Pdf {
             return Err(ReadError::Unsupported(kind));
         }
-        self.limits.check_size(bytes)?;
-        let (reply, response) = mpsc::channel();
-        self.jobs
-            .send(Job::Read {
-                bytes: bytes.to_vec(),
-                max_pages: self.limits.max_pages,
-                reply,
+        let limits = self.worker.limits();
+        limits.check_size(bytes)?;
+        let request = Request::Read {
+            max_pages: limits.max_pages,
+            bytes: bytes.to_vec(),
+        };
+        self.worker
+            .exchange(&request, |response| match response {
+                Response::Document(document) => Step::Finish(document),
+                _ => unexpected(),
             })
-            .map_err(|_| ReadError::Unavailable(Box::new(WorkerStopped)))?;
-        match response.recv_timeout(self.limits.timeout) {
-            Ok(result) => result,
-            // Le fil reste occupé par ce document : seul un processus séparé
-            // (prompt 13a) permettra de l'interrompre.
-            Err(RecvTimeoutError::Timeout) => Err(ReadError::Timeout),
-            Err(RecvTimeoutError::Disconnected) => {
-                Err(ReadError::Unavailable(Box::new(WorkerStopped)))
-            }
-        }
+            .map_err(|error| match error {
+                ConvertError::Read(error) => error,
+                ConvertError::PageTooLarge | ConvertError::Output(_) => ReadError::Corrupted,
+            })
     }
 }
 

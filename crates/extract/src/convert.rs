@@ -9,8 +9,6 @@
 //!   décodé puis incorporé sans perte. L'orientation EXIF est appliquée.
 
 use std::io::{self, Cursor};
-use std::path::Path;
-use std::sync::mpsc::{self, RecvTimeoutError, Sender, SyncSender};
 
 use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png::PngEncoder;
@@ -24,8 +22,9 @@ use pdfium_render::prelude::{
     PdfPagePaperSize, PdfPoints, PdfRenderConfig, Pdfium,
 };
 
-use crate::pdf::{self, PdfLimits, WorkerStopped};
-use crate::worker::{Job, RenderEvent};
+use crate::pdf;
+use crate::process::{PdfWorker, Step, unexpected};
+use crate::wire::{Request, Response};
 
 /// Nombre maximal de pixels d'une page rendue (50 millions : une page A0 à
 /// 150 points par pouce, ou A4 à 600).
@@ -36,49 +35,23 @@ pub const MAX_SIDE_PIXELS: u32 = 20_000;
 /// Page A4, en points PDF.
 const A4: (f32, f32) = (595.28, 841.89);
 
-/// Convertisseur de documents avec PDFium.
+/// Convertisseur de documents, client du processus PDFium.
 #[derive(Debug, Clone)]
 pub struct PdfConverter {
-    jobs: Sender<Job>,
-    limits: PdfLimits,
+    worker: PdfWorker,
 }
 
 impl PdfConverter {
-    /// Démarre le convertisseur avec la bibliothèque PDFium du dossier
-    /// `library_dir`. Il partage avec [`crate::PdfReader`] l'unique instance
-    /// de PDFium du processus.
-    ///
-    /// # Erreurs
-    ///
-    /// Renvoie [`ReadError::Unavailable`] si la bibliothèque ne peut pas être
-    /// chargée.
-    pub fn start(library_dir: &Path, limits: PdfLimits) -> Result<Self, ReadError> {
-        Ok(Self {
-            jobs: pdf::connect(library_dir)?,
-            limits,
-        })
-    }
-
-    fn send(&self, job: Job) -> Result<(), ConvertError> {
-        self.jobs
-            .send(job)
-            .map_err(|_| ReadError::Unavailable(Box::new(WorkerStopped)).into())
-    }
-}
-
-/// Erreur d'attente d'une réponse du fil PDFium.
-fn waiting_error(error: RecvTimeoutError) -> ConvertError {
-    match error {
-        // Le fil reste occupé par ce document : seul un processus séparé
-        // (prompt 13a) permettra de l'interrompre.
-        RecvTimeoutError::Timeout => ReadError::Timeout.into(),
-        RecvTimeoutError::Disconnected => ReadError::Unavailable(Box::new(WorkerStopped)).into(),
+    /// Convertisseur qui confie les documents à `worker`.
+    #[must_use]
+    pub const fn new(worker: PdfWorker) -> Self {
+        Self { worker }
     }
 }
 
 impl DocumentConverter for PdfConverter {
     fn max_input_bytes(&self) -> u64 {
-        self.limits.max_bytes
+        self.worker.limits().max_bytes
     }
 
     fn pdf_to_images(
@@ -87,59 +60,52 @@ impl DocumentConverter for PdfConverter {
         options: RenderOptions,
         page: &mut dyn FnMut(u32, Vec<u8>) -> io::Result<()>,
     ) -> Result<u32, ConvertError> {
-        self.limits.check_size(pdf)?;
-        // Une seule page d'avance : la mémoire reste bornée quel que soit le
-        // nombre de pages.
-        let (events, received) = mpsc::sync_channel(1);
-        self.send(Job::Render {
-            bytes: pdf.to_vec(),
-            max_pages: self.limits.max_pages,
+        let limits = self.worker.limits();
+        limits.check_size(pdf)?;
+        let request = Request::Render {
+            max_pages: limits.max_pages,
             options,
-            events,
-        })?;
-        loop {
-            match received
-                .recv_timeout(self.limits.timeout)
-                .map_err(waiting_error)?
-            {
-                // Abandonner `received` arrête le rendu des pages suivantes.
-                RenderEvent::Page(number, image) => {
-                    page(number, image).map_err(ConvertError::Output)?;
-                }
-                RenderEvent::Done(count) => return Ok(count),
-                RenderEvent::Failed(error) => return Err(error),
-            }
-        }
+            bytes: pdf.to_vec(),
+        };
+        // Les pages arrivent une par une : le délai s'applique à chacune.
+        self.worker.exchange(&request, |response| match response {
+            Response::Page(number, image) => match page(number, image) {
+                Ok(()) => Step::Continue,
+                Err(error) => Step::Abort(ConvertError::Output(error)),
+            },
+            Response::Done(count) => Step::Finish(count),
+            _ => unexpected(),
+        })
     }
 
     fn images_to_pdf(&self, images: &[(DocumentKind, &[u8])]) -> Result<Vec<u8>, ConvertError> {
+        let limits = self.worker.limits();
         let mut owned = Vec::with_capacity(images.len());
         for (kind, bytes) in images {
             if !matches!(kind, DocumentKind::Png | DocumentKind::Jpeg) {
                 return Err(ReadError::Unsupported(*kind).into());
             }
-            self.limits.check_size(bytes)?;
+            limits.check_size(bytes)?;
             owned.push((*kind, bytes.to_vec()));
         }
-        let (reply, response) = mpsc::channel();
-        self.send(Job::Compose {
-            images: owned,
-            reply,
-        })?;
-        response
-            .recv_timeout(self.limits.timeout)
-            .map_err(waiting_error)?
+        self.worker.exchange(
+            &Request::Compose { images: owned },
+            |response| match response {
+                Response::Pdf(pdf) => Step::Finish(pdf),
+                _ => unexpected(),
+            },
+        )
     }
 }
 
-/// Rend chaque page de `bytes` et l'envoie dans `events` ; s'arrête si le
-/// demandeur a abandonné. Renvoie le nombre de pages.
+/// Rend chaque page de `bytes` et la passe à `page`, qui renvoie `false` pour
+/// arrêter. Renvoie le nombre de pages rendues.
 pub(crate) fn render(
     pdfium: &Pdfium,
     bytes: &[u8],
     max_pages: u32,
     options: RenderOptions,
-    events: &SyncSender<RenderEvent>,
+    page_done: &mut dyn FnMut(u32, Vec<u8>) -> bool,
 ) -> Result<u32, ConvertError> {
     let document = pdf::open(pdfium, bytes, max_pages)?;
     let scale = f32::from(options.dpi) / 72.0;
@@ -155,7 +121,7 @@ pub(crate) fn render(
             .and_then(|bitmap| bitmap.as_image())
             .map_err(|error| pdf::map_error(&error))?;
         let encoded = encode(&image, options.format)?;
-        if events.send(RenderEvent::Page(number, encoded)).is_err() {
+        if !page_done(number, encoded) {
             break;
         }
         count = number;
@@ -219,7 +185,7 @@ pub(crate) fn compose(
 ) -> Result<Vec<u8>, ConvertError> {
     let mut document = pdfium
         .create_new_pdf()
-        .map_err(|_| ReadError::Unavailable(Box::new(WorkerStopped)))?;
+        .map_err(|error| pdf::map_error(&error))?;
     for (_, bytes) in images {
         add_image_page(&mut document, bytes)?;
     }

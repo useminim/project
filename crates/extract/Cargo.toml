@@ -6,11 +6,18 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
+# Processus PDFium lancé par les tests (l'application, elle, se relance avec
+# l'argument --pdf-worker).
+[[bin]]
+name = "minim-pdf-worker"
+path = "src/bin/minim-pdf-worker.rs"
+
 [dependencies]
 chrono.workspace = true
 image.workspace = true
 minim-core.workspace = true
 pdfium-render.workspace = true
+sysinfo.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

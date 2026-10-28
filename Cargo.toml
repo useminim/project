@@ -40,6 +40,8 @@ zbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust"] 
 # Lecture des PDF (D-34) : les binaires PDFium sont fournis par
 # scripts/fetch-pdfium.mjs.
 pdfium-render = { version = "0.9", default-features = false, features = ["pdfium_latest", "thread_safe", "image_latest"] }
+# Mémoire du processus PDFium, surveillée par l'application (prompt 13a).
+sysinfo = { version = "0.39", default-features = false, features = ["system"] }
 # Encodage et décodage PNG / JPEG (conversions).
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 
