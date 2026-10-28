@@ -145,7 +145,9 @@ mod tests {
         let app = mock_builder()
             .manage(workflows)
             .invoke_handler(crate::commands::handler())
-            .build(tauri::generate_context!())
+            // `test = true` : sans l'Info.plist embarqué sous macOS, déjà défini
+            // par `run()` dans cette bibliothèque (symbole en double sinon).
+            .build(tauri::generate_context!(test = true))
             .unwrap();
         let window = WebviewWindowBuilder::new(&app, "main", tauri::WebviewUrl::default())
             .build()
