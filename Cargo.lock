@@ -2371,6 +2371,7 @@ dependencies = [
  "chrono",
  "keyring-core",
  "minim-core",
+ "minim-extract",
  "minim-store",
  "serde",
  "serde_json",
