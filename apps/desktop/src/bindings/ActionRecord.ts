@@ -20,7 +20,9 @@ status: ActionStatus,
  */
 duration_ms: number, 
 /**
- * Opération faite sur le disque, de quoi l'annuler (prompt 24). Absente
- * si l'action n'a rien changé (renommage vers le même nom, par exemple).
+ * Opérations faites sur le disque, dans l'ordre, de quoi les annuler
+ * (prompt 24) : une seule pour un renommage, un déplacement ou une copie,
+ * une par fichier produit pour une conversion. Vide si l'action n'a rien
+ * changé (renommage vers le même nom, par exemple).
  */
-operation?: FileOperation, };
+operations?: Array<FileOperation>, };

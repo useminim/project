@@ -125,7 +125,7 @@ pub fn execution_log(
             kind: ActionKind::Rename,
             status: ActionStatus::Success,
             duration_ms: 4,
-            operation: None,
+            operations: Vec::new(),
         }],
         error: None,
         started_at,

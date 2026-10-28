@@ -59,11 +59,13 @@ pub struct ActionRecord {
     /// Durée de l'action en millisecondes.
     #[cfg_attr(feature = "ts", ts(type = "number"))]
     pub duration_ms: u64,
-    /// Opération faite sur le disque, de quoi l'annuler (prompt 24). Absente
-    /// si l'action n'a rien changé (renommage vers le même nom, par exemple).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(feature = "ts", ts(optional))]
-    pub operation: Option<FileOperation>,
+    /// Opérations faites sur le disque, dans l'ordre, de quoi les annuler
+    /// (prompt 24) : une seule pour un renommage, un déplacement ou une copie,
+    /// une par fichier produit pour une conversion. Vide si l'action n'a rien
+    /// changé (renommage vers le même nom, par exemple).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[cfg_attr(feature = "ts", ts(as = "Option<Vec<FileOperation>>", optional))]
+    pub operations: Vec<FileOperation>,
 }
 
 /// Nature d'une opération sur un fichier.
@@ -77,6 +79,18 @@ pub enum OperationKind {
     Move,
     /// Une copie du fichier a été créée ; l'original n'a pas bougé.
     Copy,
+    /// Un fichier converti a été créé à partir du fichier ; l'original n'a
+    /// pas bougé.
+    Convert,
+}
+
+impl OperationKind {
+    /// L'opération a créé un nouveau fichier et laissé l'original en place :
+    /// l'annuler revient à supprimer le fichier produit.
+    #[must_use]
+    pub const fn creates_a_file(self) -> bool {
+        matches!(self, Self::Copy | Self::Convert)
+    }
 }
 
 /// Opération faite sur un fichier, enregistrée dans le journal chiffré pour
@@ -86,7 +100,8 @@ pub enum OperationKind {
 pub struct FileOperation {
     /// Nature de l'opération.
     pub kind: OperationKind,
-    /// Emplacement d'origine (pour une copie : le fichier copié).
+    /// Emplacement d'origine (pour une copie ou une conversion : le fichier
+    /// de départ).
     pub from: PathBuf,
     /// Emplacement produit.
     pub to: PathBuf,
@@ -121,6 +136,13 @@ impl Fingerprint {
     #[must_use]
     pub const fn from_bytes(bytes: [u8; 32]) -> Self {
         Self(bytes)
+    }
+
+    /// Empreinte d'un contenu en mémoire.
+    #[must_use]
+    pub fn of(content: &[u8]) -> Self {
+        use sha2::{Digest as _, Sha256};
+        Self(Sha256::digest(content).into())
     }
 }
 
@@ -215,12 +237,12 @@ mod tests {
             "type": "move",
             "status": "rolled_back",
             "duration_ms": 12,
-            "operation": {
+            "operations": [{
                 "kind": "move",
                 "from": "/home/alice/Factures/a.pdf",
                 "to": "/home/alice/Archives/a.pdf",
                 "fingerprint": fingerprint
-            }
+            }]
         });
         let record: ActionRecord = serde_json::from_value(value.clone()).unwrap();
 
@@ -230,6 +252,29 @@ mod tests {
             !format!("{record:?}").contains("alice"),
             "Debug n'affiche pas les chemins"
         );
+    }
+
+    #[test]
+    fn records_every_file_produced_by_a_conversion() {
+        let operation = |page: u32| {
+            json!({
+                "kind": "convert",
+                "from": "/home/alice/Factures/a.pdf",
+                "to": format!("/home/alice/Factures/a_p{page}.png"),
+                "fingerprint": Fingerprint::of(&page.to_be_bytes()).to_string()
+            })
+        };
+        let value = json!({
+            "type": "convert",
+            "status": "success",
+            "duration_ms": 340,
+            "operations": [operation(1), operation(2)]
+        });
+        let record: ActionRecord = serde_json::from_value(value.clone()).unwrap();
+
+        assert_eq!(record.operations.len(), 2);
+        assert!(record.operations[0].kind.creates_a_file());
+        assert_eq!(serde_json::to_value(&record).unwrap(), value);
     }
 
     #[test]

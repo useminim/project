@@ -99,8 +99,16 @@ fn action() -> impl Strategy<Value = Action> {
             }
         }),
         destination.prop_map(|destination| Action::Copy { destination }),
-        prop_oneof![Just(ConvertFormat::Pdf), Just(ConvertFormat::Png)]
-            .prop_map(|to| Action::Convert { to }),
+        (
+            prop_oneof![
+                Just(ConvertFormat::Pdf),
+                Just(ConvertFormat::Png),
+                Just(ConvertFormat::Jpeg)
+            ],
+            prop::option::of(any::<u16>()),
+            prop::option::of(any::<u8>()),
+        )
+            .prop_map(|(to, dpi, quality)| Action::Convert { to, dpi, quality }),
         (
             prop::collection::vec(field_name(), 0..3),
             prop_oneof![Just(ExportFormat::Csv), Just(ExportFormat::Json)],
