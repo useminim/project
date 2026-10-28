@@ -8,7 +8,7 @@
 use std::fmt;
 use std::io;
 
-use minim_core::ValidationError;
+use minim_core::{ValidationError, WorkflowServiceError};
 use serde::Serialize;
 
 /// Catégorie stable d'une erreur, sérialisée en `snake_case`.
@@ -20,6 +20,11 @@ pub enum ErrorCode {
     ValidationFailed,
     /// L'élément demandé n'existe pas.
     NotFound,
+    /// L'élément a été modifié entre-temps (autre fenêtre, synchronisation) :
+    /// il faut le relire.
+    Conflict,
+    /// Le stockage local n'a pas pu être ouvert au démarrage.
+    StorageUnavailable,
     /// Une lecture ou une écriture sur le disque a échoué.
     Io,
     /// Erreur inattendue ; le détail n'est que dans les logs.
@@ -33,6 +38,8 @@ impl ErrorCode {
         match self {
             Self::ValidationFailed => "errors.validation_failed",
             Self::NotFound => "errors.not_found",
+            Self::Conflict => "errors.conflict",
+            Self::StorageUnavailable => "errors.storage_unavailable",
             Self::Io => "errors.io",
             Self::Internal => "errors.internal",
         }
@@ -143,6 +150,18 @@ impl From<Vec<ValidationError>> for CommandError {
     }
 }
 
+impl From<WorkflowServiceError> for CommandError {
+    fn from(error: WorkflowServiceError) -> Self {
+        match error {
+            WorkflowServiceError::NotFound => Self::new(ErrorCode::NotFound),
+            WorkflowServiceError::Conflict => Self::new(ErrorCode::Conflict),
+            WorkflowServiceError::Invalid(issues) => issues.into(),
+            // Les erreurs du stockage ne contiennent que des identifiants.
+            WorkflowServiceError::Store(error) => Self::internal(&error),
+        }
+    }
+}
+
 impl From<io::Error> for CommandError {
     /// Seuls la nature de l'erreur et son code système sont journalisés : le
     /// message d'une erreur d'entrée-sortie peut contenir un chemin.
@@ -222,6 +241,32 @@ mod tests {
                 "details": { "kind": "io", "io_kind": "permission_denied" }
             })
         );
+    }
+
+    #[test]
+    fn maps_workflow_service_errors() {
+        let cases = [
+            (WorkflowServiceError::NotFound, ErrorCode::NotFound),
+            (WorkflowServiceError::Conflict, ErrorCode::Conflict),
+            (
+                WorkflowServiceError::Invalid(vec![ValidationError::new(
+                    "name",
+                    ValidationErrorKind::EmptyName,
+                )]),
+                ErrorCode::ValidationFailed,
+            ),
+            (
+                WorkflowServiceError::Store(minim_core::ports::StoreError::Unavailable(Box::new(
+                    io::Error::other("/home/alice/minim.db"),
+                ))),
+                ErrorCode::Internal,
+            ),
+        ];
+        for (source, expected) in cases {
+            let error = CommandError::from(source);
+            assert_eq!(error.code, expected);
+            assert!(!to_json(&error).to_string().contains("alice"));
+        }
     }
 
     #[test]

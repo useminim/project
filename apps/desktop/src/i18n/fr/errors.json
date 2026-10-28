@@ -1,6 +1,8 @@
 {
   "validation_failed": "Certaines informations sont invalides.",
   "not_found": "L'élément demandé est introuvable.",
+  "conflict": "Cet élément a été modifié entre-temps. Rechargez-le puis recommencez.",
+  "storage_unavailable": "Le stockage local n'a pas pu être ouvert. Vos workflows sont indisponibles.",
   "io": "Un fichier n'a pas pu être lu ou écrit.",
   "internal": "Une erreur inattendue est survenue."
 }

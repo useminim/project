@@ -1,7 +1,19 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window",
+  "description": "Main window: the app's own commands and listening to their events, nothing else",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-storage-status",
+    "allow-list-workflows",
+    "allow-get-workflow",
+    "allow-validate-workflow",
+    "allow-create-workflow",
+    "allow-update-workflow",
+    "allow-delete-workflow",
+    "allow-set-workflow-enabled",
+    "allow-reorder-workflows"
+  ]
 }

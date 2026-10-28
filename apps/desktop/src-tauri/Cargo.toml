@@ -37,7 +37,9 @@ apple-native-keyring-store.workspace = true
 zbus-secret-service-keyring-store.workspace = true
 
 [dev-dependencies]
-minim-core = { workspace = true, features = ["ts"] }
+minim-core = { workspace = true, features = ["test-support", "ts"] }
+# Runtime simulé, pour tester les commandes avec la vraie capability.
+tauri = { workspace = true, features = ["test"] }
 serde_json.workspace = true
 tempfile.workspace = true
 ts-rs.workspace = true

@@ -1,13 +1,41 @@
 //! Commandes Tauri appelées par l'interface (via `invokeCommand`).
+//!
+//! Ce sont des adaptateurs fins : elles délèguent aux services de
+//! `minim-core`, exécutent les appels bloquants hors du fil principal et
+//! convertissent les erreurs en `CommandError`. Chaque commande doit être
+//! déclarée dans `build.rs` et autorisée dans `capabilities/default.json`.
 
-use tauri::State;
+pub mod storage;
+pub mod workflows;
 
-use crate::storage::{Storage, StorageStatus};
+use tauri::Runtime;
+use tauri::ipc::Invoke;
 
-/// État du stockage local : ouvert ou non, protection réduite, ancienne base
-/// mise de côté au démarrage.
-#[tauri::command]
-#[must_use]
-pub fn storage_status(storage: State<'_, Storage>) -> StorageStatus {
-    storage.status
+use crate::error::CommandError;
+
+/// Toutes les commandes de l'application (liste à garder alignée sur
+/// `build.rs`).
+pub fn handler<R: Runtime>() -> impl Fn(Invoke<R>) -> bool + Send + Sync + 'static {
+    tauri::generate_handler![
+        storage::storage_status,
+        workflows::list_workflows,
+        workflows::get_workflow,
+        workflows::validate_workflow,
+        workflows::create_workflow,
+        workflows::update_workflow,
+        workflows::delete_workflow,
+        workflows::set_workflow_enabled,
+        workflows::reorder_workflows,
+    ]
+}
+
+/// Exécute `work` sur un fil du pool bloquant de Tauri.
+async fn blocking<T, F>(work: F) -> Result<T, CommandError>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T, CommandError> + Send + 'static,
+{
+    tauri::async_runtime::spawn_blocking(work)
+        .await
+        .map_err(|error| CommandError::internal(&error))?
 }

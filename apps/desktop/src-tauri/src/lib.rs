@@ -7,7 +7,13 @@ pub mod logging;
 pub mod pdf;
 pub mod storage;
 
+use std::sync::Arc;
+
+use minim_core::WorkflowService;
+use minim_core::ports::{SystemClock, UlidGenerator};
 use tauri::Manager;
+
+use crate::commands::workflows::Workflows;
 
 /// Construit et exécute l'application Tauri jusqu'à la fermeture de la dernière fenêtre.
 ///
@@ -48,6 +54,14 @@ pub fn run() -> tauri::Result<()> {
                 recovered = ?storage.status.recovered,
                 "stockage local"
             );
+            let workflows = storage.repositories.as_ref().map(|repositories| {
+                WorkflowService::new(
+                    Arc::clone(&repositories.workflows),
+                    Arc::new(SystemClock),
+                    Arc::new(UlidGenerator),
+                )
+            });
+            app.manage(Workflows(workflows));
             app.manage(storage);
 
             if let Some(worker) = pdf::prepare(&app.path().resource_dir()?) {
@@ -55,6 +69,6 @@ pub fn run() -> tauri::Result<()> {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![commands::storage_status])
+        .invoke_handler(commands::handler())
         .run(tauri::generate_context!())
 }

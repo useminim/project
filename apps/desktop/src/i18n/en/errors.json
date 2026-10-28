@@ -1,6 +1,8 @@
 {
   "validation_failed": "Some information is invalid.",
   "not_found": "The requested item could not be found.",
+  "conflict": "This item was changed in the meantime. Reload it and try again.",
+  "storage_unavailable": "Local storage could not be opened. Your workflows are unavailable.",
   "io": "A file could not be read or written.",
   "internal": "An unexpected error occurred."
 }
