@@ -1,0 +1,13 @@
+# Outil autonome qui produit les PDF du corpus qu'Edge ne sait pas faire :
+# chiffre.pdf et les documents piégés (hors du workspace).
+[package]
+name = "corpus-tool"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+flate2 = "1"
+lopdf = "0.46"
+
+[workspace]
