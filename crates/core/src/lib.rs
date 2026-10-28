@@ -13,6 +13,7 @@ pub mod matching;
 pub mod ports;
 pub mod profile;
 pub mod redacted;
+pub mod service;
 pub mod template;
 #[cfg(any(test, feature = "test-support"))]
 pub mod testing;
@@ -32,6 +33,7 @@ pub use field::{FieldName, FieldNameError};
 pub use id::{DocumentId, IdError, OrganizationId, ProfileId, RunId, UserId, WorkflowId};
 pub use profile::{DetectedField, DocumentProfile, FileInfo, TextSource};
 pub use redacted::{REDACTED, Redacted};
+pub use service::{LOCAL_OWNER, WorkflowDraft, WorkflowService, WorkflowServiceError};
 pub use template::{Segment, Template, TemplateError};
 pub use trigger::{Condition, ConditionCategory, MatchMode, MatchResult, Trigger, TriggerSource};
 pub use waiting_zone::{WaitingEntry, WaitingReason};

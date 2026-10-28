@@ -12,6 +12,8 @@ import type { ErrorCode } from "../bindings/ErrorCode";
 const errorCodes = {
   validation_failed: true,
   not_found: true,
+  conflict: true,
+  storage_unavailable: true,
   io: true,
   internal: true,
 } satisfies Record<ErrorCode, true>;

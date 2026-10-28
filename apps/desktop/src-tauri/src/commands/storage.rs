@@ -1,4 +1,4 @@
-//! Commandes Tauri appelées par l'interface (via `invokeCommand`).
+//! État du stockage local.
 
 use tauri::State;
 

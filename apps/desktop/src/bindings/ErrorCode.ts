@@ -3,4 +3,4 @@
 /**
  * Catégorie stable d'une erreur, sérialisée en `snake_case`.
  */
-export type ErrorCode = "validation_failed" | "not_found" | "io" | "internal";
+export type ErrorCode = "validation_failed" | "not_found" | "conflict" | "storage_unavailable" | "io" | "internal";
