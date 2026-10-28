@@ -54,5 +54,5 @@ $RECYCLE.BIN/
 apps/desktop/src-tauri/resources/pdfium/
 
 # Outil de génération du corpus PDF (hors workspace)
-fixtures/pdf/encrypt/target/
-fixtures/pdf/encrypt/Cargo.lock
+fixtures/pdf/tool/target/
+fixtures/pdf/tool/Cargo.lock

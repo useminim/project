@@ -8,11 +8,12 @@
     reason = "fichier de tests : clippy.toml n'autorise unwrap que dans les fonctions #[test]"
 )]
 
-use std::path::PathBuf;
 use std::time::Duration;
 
 use minim_core::ports::{DocumentKind, DocumentReader as _, RawDocument, ReadError};
 use minim_extract::{PdfLimits, PdfReader};
+
+mod common;
 
 const FACTURE: &[u8] = include_bytes!("../../../fixtures/pdf/facture.pdf");
 const POLICE: &[u8] = include_bytes!("../../../fixtures/pdf/police.pdf");
@@ -20,20 +21,8 @@ const SCAN: &[u8] = include_bytes!("../../../fixtures/pdf/scan.pdf");
 const VIDE: &[u8] = include_bytes!("../../../fixtures/pdf/vide.pdf");
 const CHIFFRE: &[u8] = include_bytes!("../../../fixtures/pdf/chiffre.pdf");
 
-fn library_dir() -> PathBuf {
-    std::env::var_os("MINIM_PDFIUM_DIR").map_or_else(
-        || {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../apps/desktop/src-tauri/resources/pdfium")
-        },
-        PathBuf::from,
-    )
-}
-
 fn reader(limits: PdfLimits) -> PdfReader {
-    PdfReader::start(&library_dir(), limits).expect(
-        "PDFium introuvable : lancer `node scripts/fetch-pdfium.mjs` (fait par `pnpm test`)",
-    )
+    PdfReader::new(common::worker(limits))
 }
 
 fn read(bytes: &[u8]) -> Result<RawDocument, ReadError> {

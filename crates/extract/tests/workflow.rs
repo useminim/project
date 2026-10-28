@@ -19,17 +19,12 @@ use minim_core::matching::FileFacts;
 use minim_core::ports::StdFileSystem;
 use minim_core::testing::samples;
 use minim_extract::{PdfConverter, PdfLimits};
+
+mod common;
 use serde_json::json;
 
 fn converter() -> PdfConverter {
-    let dir = std::env::var_os("MINIM_PDFIUM_DIR").map_or_else(
-        || {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../apps/desktop/src-tauri/resources/pdfium")
-        },
-        PathBuf::from,
-    );
-    PdfConverter::start(&dir, PdfLimits::default()).expect("PDFium introuvable")
+    PdfConverter::new(common::worker(PdfLimits::default()))
 }
 
 #[test]

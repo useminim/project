@@ -26,5 +26,5 @@ print vide.html vide.pdf
 print scan.html scan.pdf
 rm -f sources/facture.png
 
-(cd encrypt && cargo run --quiet --release)
+(cd tool && cargo run --quiet --release)
 echo "Corpus régénéré."

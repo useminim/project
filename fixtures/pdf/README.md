@@ -8,7 +8,10 @@ Documents **entièrement synthétiques** : noms, adresses, montants et IBAN sont
 | `police.pdf` | Attestation en polices Gabriola et Comic Sans (polices incorporées) | `sources/police.html`, Edge |
 | `scan.pdf` | « Scan » de la facture : une image seule, sans texte (2 pages) | Capture d'écran de `facture.html` insérée dans `sources/scan.html`, Edge |
 | `vide.pdf` | Une page blanche, sans texte | `sources/vide.html`, Edge |
-| `chiffre.pdf` | `facture.pdf` chiffré en AES-128, mot de passe utilisateur « secret » | Outil `encrypt/` (lopdf) |
+| `chiffre.pdf` | `facture.pdf` chiffré en AES-128, mot de passe utilisateur « secret » | Outil `tool/` (lopdf) |
+| `boucle.pdf` | **Piégé** : arbre des pages qui se contient lui-même | Outil `tool/` |
+| `bombe.pdf` | **Piégé** : flux de 1 Mio qui se décompresse en 1 Gio | Outil `tool/` (lopdf, flate2) |
+| `geante.pdf` | **Piégé** : pages de 200 pouces et de 100 km de côté | Outil `tool/` |
 
 Les cas « PDF tronqué » et « fichier qui n'est pas un PDF » sont construits dans les tests à partir de ces fichiers.
 

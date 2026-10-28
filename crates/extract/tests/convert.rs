@@ -6,13 +6,13 @@
     reason = "fichier de tests : clippy.toml n'autorise unwrap que dans les fonctions #[test]"
 )]
 
-use std::path::PathBuf;
-
 use image::{GenericImageView as _, ImageFormat as Format, Rgb, RgbImage};
 use minim_core::ports::{
     ConvertError, DocumentConverter as _, DocumentKind, ImageFormat, ReadError, RenderOptions,
 };
 use minim_extract::{PdfConverter, PdfLimits};
+
+mod common;
 
 const FACTURE: &[u8] = include_bytes!("../../../fixtures/pdf/facture.pdf");
 const POLICE: &[u8] = include_bytes!("../../../fixtures/pdf/police.pdf");
@@ -21,16 +21,7 @@ const VIDE: &[u8] = include_bytes!("../../../fixtures/pdf/vide.pdf");
 const CHIFFRE: &[u8] = include_bytes!("../../../fixtures/pdf/chiffre.pdf");
 
 fn converter() -> PdfConverter {
-    let dir = std::env::var_os("MINIM_PDFIUM_DIR").map_or_else(
-        || {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../apps/desktop/src-tauri/resources/pdfium")
-        },
-        PathBuf::from,
-    );
-    PdfConverter::start(&dir, PdfLimits::default()).expect(
-        "PDFium introuvable : lancer `node scripts/fetch-pdfium.mjs` (fait par `pnpm test`)",
-    )
+    PdfConverter::new(common::worker(PdfLimits::default()))
 }
 
 fn png(dpi: u16) -> RenderOptions {
