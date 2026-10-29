@@ -18,6 +18,11 @@
     "allow-set-workflow-enabled",
     "allow-reorder-workflows",
     "allow-preview-workflow-on-file",
-    "allow-run-workflow-on-file"
+    "allow-run-workflow-on-file",
+    "allow-account-status",
+    "allow-sign-in",
+    "allow-sign-up",
+    "allow-sign-out",
+    "allow-request-password-reset"
   ]
 }

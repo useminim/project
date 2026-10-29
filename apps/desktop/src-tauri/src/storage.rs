@@ -22,8 +22,8 @@ pub const DATABASE_FILE: &str = "minim.db";
 /// Fichier de clé utilisé en repli sous Linux sans Secret Service.
 pub const KEY_FILE: &str = "minim.key";
 
-/// Service et compte de l'entrée du trousseau qui garde la clé.
-pub const KEYCHAIN_SERVICE: &str = "com.useminim.desktop";
+/// Service de l'entrée du trousseau qui garde la clé.
+pub const KEYCHAIN_SERVICE: &str = crate::keychain::SERVICE;
 /// Compte de l'entrée du trousseau qui garde la clé.
 pub const KEYCHAIN_USER: &str = "local-database-key";
 
@@ -89,31 +89,8 @@ fn keychain_error(error: keyring_core::Error) -> KeyError {
 }
 
 impl KeychainKeyProvider {
-    /// Entrée du trousseau. Sous Windows, la persistance `Local` garde la clé
-    /// sur la machine, comme la base (la valeur par défaut `Enterprise` la
-    /// ferait voyager avec un profil itinérant).
     fn open() -> Result<Self, KeyError> {
-        use keyring_core::api::CredentialStoreApi as _;
-
-        #[cfg(target_os = "windows")]
-        let (store, modifiers) = (
-            windows_native_keyring_store::Store::new().map_err(keychain_error)?,
-            Some(std::collections::HashMap::from([("persistence", "Local")])),
-        );
-        #[cfg(target_os = "macos")]
-        let (store, modifiers) = (
-            apple_native_keyring_store::keychain::Store::new().map_err(keychain_error)?,
-            None::<std::collections::HashMap<&str, &str>>,
-        );
-        #[cfg(all(unix, not(target_os = "macos")))]
-        let (store, modifiers) = (
-            zbus_secret_service_keyring_store::Store::new().map_err(keychain_error)?,
-            None::<std::collections::HashMap<&str, &str>>,
-        );
-
-        let entry = store
-            .build(KEYCHAIN_SERVICE, KEYCHAIN_USER, modifiers.as_ref())
-            .map_err(keychain_error)?;
+        let entry = crate::keychain::entry(KEYCHAIN_USER).map_err(keychain_error)?;
         Ok(Self { entry })
     }
 }

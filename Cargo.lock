@@ -2502,6 +2502,7 @@ dependencies = [
  "minim-core",
  "minim-extract",
  "minim-store",
+ "minim-sync",
  "serde",
  "serde_json",
  "tauri",
