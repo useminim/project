@@ -184,6 +184,21 @@ describe("WorkflowsScreen", () => {
     await waitFor(() => expect(names()).not.toEqual(["A", "B", "C"]));
   });
 
+  it("opens the trial of a workflow and comes back", async () => {
+    backend([workflow(1, "Factures")]);
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(
+      await screen.findByRole("button", { name: /Essayer «\sFactures\s» sur un fichier/ }),
+    );
+
+    expect(screen.getByRole("heading", { name: /Essayer «\sFactures\s»/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Choisir un fichier…" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Retour à la liste" }));
+    expect(await screen.findByRole("heading", { name: "Factures" })).toBeTruthy();
+  });
+
   it("reloads after a change made elsewhere", async () => {
     const { current } = backend([workflow(1, "Factures")]);
     renderScreen();

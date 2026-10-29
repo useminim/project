@@ -21,6 +21,7 @@ body {
 
 h1,
 h2,
+h3,
 p {
   margin: 0;
 }
@@ -719,4 +720,82 @@ p {
   border: 1px dashed var(--color-border);
   border-radius: var(--radius);
   overflow-wrap: anywhere;
+}
+
+/* Essai sur un fichier */
+
+.trial {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.trial__title {
+  font-size: 1.1rem;
+}
+
+.trial__outcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.trial__verdict {
+  font-weight: 600;
+}
+
+.trial__verdict--match,
+.trial__mark--match {
+  color: var(--color-success);
+}
+
+.trial__verdict--no_match,
+.trial__mark--no_match {
+  color: var(--color-danger);
+}
+
+.trial__conditions,
+.trial__actions,
+.trial__files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.trial__conditions {
+  padding-left: 0;
+  list-style: none;
+}
+
+.trial__mark {
+  font-weight: 700;
+}
+
+.trial__observed,
+.trial__status {
+  color: var(--color-text-muted);
+}
+
+.trial__subtitle {
+  font-size: 1rem;
+}
+
+.trial__file {
+  overflow-wrap: anywhere;
+  list-style: none;
+}
+
+.trial__done {
+  color: var(--color-success);
+  overflow-wrap: anywhere;
+}
+
+.wizard__advanced.wizard__trial > summary {
+  color: var(--color-text);
+  font-weight: 600;
 }
