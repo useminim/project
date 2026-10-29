@@ -1,7 +1,7 @@
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import { afterEach, describe, expect, it } from "vitest";
 import type { CommandError } from "../bindings/CommandError";
-import { ApiError, invokeCommand } from "./invoke";
+import { ApiError, invokeCommand, toCommandError } from "./invoke";
 
 afterEach(() => {
   clearMocks();
@@ -60,5 +60,16 @@ describe("invokeCommand", () => {
     const reason = await rejectionOf(invokeCommand("save_workflow"));
 
     expect((reason as ApiError).error.code).toBe("internal");
+  });
+
+  it("unwraps an ApiError back into its CommandError", async () => {
+    const conflict: CommandError = { code: "conflict", message_key: "errors.conflict" };
+    mockIPC(() => {
+      throw conflict;
+    });
+
+    const reason = await rejectionOf(invokeCommand("update_workflow"));
+
+    expect(toCommandError(reason)).toEqual(conflict);
   });
 });

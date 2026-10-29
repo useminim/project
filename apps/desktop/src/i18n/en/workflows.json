@@ -3,5 +3,70 @@
   "empty": {
     "title": "No workflows yet",
     "description": "A workflow recognizes a type of document and applies actions to it: rename, move, convert…"
+  },
+  "create": "Create a workflow",
+  "createSoon": "Creating workflows comes in the next version.",
+  "addSamples": "Add samples (development)",
+  "orderHelp": "Workflows are tried from top to bottom: the first one that recognizes a document applies.",
+  "list": "Workflows, in the order they are tried",
+  "when": "When",
+  "then": "Then",
+  "enabled": "On",
+  "toggle": "Turn on “{{name}}”",
+  "moveUp": "Move “{{name}}” up",
+  "moveDown": "Move “{{name}}” down",
+  "dragHandle": "Move “{{name}}” (drag, or Space then arrow keys)",
+  "delete": "Delete “{{name}}”",
+  "deleteTitle": "Delete “{{name}}”?",
+  "deleteDescription": "The workflow will no longer apply to new documents. Files already processed do not change.",
+  "deleteConfirm": "Delete",
+  "deleted": "Workflow deleted.",
+  "conflict": "This workflow was changed in the meantime: the list was reloaded.",
+  "continues": "The following workflows are tried too",
+  "drag": {
+    "start": "Picked up workflow “{{name}}”, position {{position}} of {{total}}.",
+    "over": "Workflow “{{name}}” moved to position {{position}} of {{total}}.",
+    "end": "Workflow “{{name}}” dropped at position {{position}} of {{total}}.",
+    "cancel": "Move cancelled: “{{name}}” is back in place.",
+    "instructions": "Press Space to pick up a workflow, the arrow keys to move it, Space to drop it or Escape to cancel."
+  },
+  "summary": {
+    "match": {
+      "all": " and ",
+      "any": " or "
+    },
+    "then": ", then ",
+    "group": "({{conditions}})",
+    "noCondition": "No conditions",
+    "noAction": "No actions",
+    "condition": {
+      "fileNameContains": "the name contains “{{value}}”",
+      "fileNameDate": "the name contains a date",
+      "fileNameDateFormat": "the name contains a date formatted {{format}}",
+      "extension": "the extension is {{extensions}}",
+      "contentContains": "the content contains “{{value}}”",
+      "exactCase": " (matching case)",
+      "hasField": "the document contains the field “{{field}}”",
+      "table": "the document contains a table",
+      "tableMinRows_one": "the document contains a table of at least {{count}} row",
+      "tableMinRows_other": "the document contains a table of at least {{count}} rows",
+      "similar": "the document looks like the examples"
+    },
+    "action": {
+      "rename": "rename to “{{template}}”",
+      "move": "move to {{folder}}",
+      "copy": "copy to {{folder}}",
+      "convert": {
+        "pdf": "convert to PDF",
+        "png": "convert to PNG images",
+        "jpeg": "convert to JPEG images"
+      },
+      "extract": {
+        "csv_one": "extract {{count}} field to CSV",
+        "csv_other": "extract {{count}} fields to CSV",
+        "json_one": "extract {{count}} field to JSON",
+        "json_other": "extract {{count}} fields to JSON"
+      }
+    }
   }
 }

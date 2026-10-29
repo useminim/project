@@ -44,8 +44,14 @@ export function isCommandError(value: unknown): value is CommandError {
   return isErrorCode(candidate.code) && typeof candidate.message_key === "string";
 }
 
-/** Convertit le motif d'un rejet en `CommandError`. */
+/**
+ * Convertit le motif d'un rejet en `CommandError` : une `ApiError` levée par
+ * `invokeCommand`, ou un `CommandError` brut.
+ */
 export function toCommandError(reason: unknown): CommandError {
+  if (reason instanceof ApiError) {
+    return reason.error;
+  }
   return isCommandError(reason) ? reason : internalError;
 }
 

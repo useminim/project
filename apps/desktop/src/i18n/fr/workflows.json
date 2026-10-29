@@ -2,6 +2,71 @@
   "title": "Workflows",
   "empty": {
     "title": "Aucun workflow pour l'instant",
-    "description": "Un workflow reconnaît un type de document et lui applique des actions : renommer, déplacer, convertir…"
+    "description": "Un workflow reconnaît un type de document et lui applique des actions : renommer, déplacer, convertir…"
+  },
+  "create": "Créer un workflow",
+  "createSoon": "La création de workflows arrive dans la prochaine version.",
+  "addSamples": "Ajouter des exemples (développement)",
+  "orderHelp": "Les workflows sont essayés de haut en bas : le premier qui reconnaît un document s'applique.",
+  "list": "Liste des workflows, dans l'ordre où ils sont essayés",
+  "when": "Quand",
+  "then": "Alors",
+  "enabled": "Actif",
+  "toggle": "Activer « {{name}} »",
+  "moveUp": "Monter « {{name}} »",
+  "moveDown": "Descendre « {{name}} »",
+  "dragHandle": "Déplacer « {{name}} » (glisser, ou Espace puis flèches)",
+  "delete": "Supprimer « {{name}} »",
+  "deleteTitle": "Supprimer « {{name}} » ?",
+  "deleteDescription": "Le workflow ne s'appliquera plus aux nouveaux documents. Les fichiers déjà traités ne changent pas.",
+  "deleteConfirm": "Supprimer",
+  "deleted": "Workflow supprimé.",
+  "conflict": "Ce workflow a été modifié entre-temps : la liste a été rechargée.",
+  "continues": "Les workflows suivants sont aussi essayés",
+  "drag": {
+    "start": "Workflow « {{name}} » saisi, position {{position}} sur {{total}}.",
+    "over": "Workflow « {{name}} » déplacé en position {{position}} sur {{total}}.",
+    "end": "Workflow « {{name}} » déposé en position {{position}} sur {{total}}.",
+    "cancel": "Déplacement annulé : « {{name}} » revient à sa place.",
+    "instructions": "Appuyez sur Espace pour saisir un workflow, sur les flèches pour le déplacer, sur Espace pour le déposer ou sur Échap pour annuler."
+  },
+  "summary": {
+    "match": {
+      "all": " et ",
+      "any": " ou "
+    },
+    "then": ", puis ",
+    "group": "({{conditions}})",
+    "noCondition": "Aucune condition",
+    "noAction": "Aucune action",
+    "condition": {
+      "fileNameContains": "le nom contient « {{value}} »",
+      "fileNameDate": "le nom contient une date",
+      "fileNameDateFormat": "le nom contient une date au format {{format}}",
+      "extension": "l'extension est {{extensions}}",
+      "contentContains": "le contenu contient « {{value}} »",
+      "exactCase": " (majuscules comprises)",
+      "hasField": "le document contient le champ « {{field}} »",
+      "table": "le document contient un tableau",
+      "tableMinRows_one": "le document contient un tableau d'au moins {{count}} ligne",
+      "tableMinRows_other": "le document contient un tableau d'au moins {{count}} lignes",
+      "similar": "le document ressemble aux exemples"
+    },
+    "action": {
+      "rename": "renommer en « {{template}} »",
+      "move": "déplacer vers {{folder}}",
+      "copy": "copier vers {{folder}}",
+      "convert": {
+        "pdf": "convertir en PDF",
+        "png": "convertir en images PNG",
+        "jpeg": "convertir en images JPEG"
+      },
+      "extract": {
+        "csv_one": "extraire {{count}} champ en CSV",
+        "csv_other": "extraire {{count}} champs en CSV",
+        "json_one": "extraire {{count}} champ en JSON",
+        "json_other": "extraire {{count}} champs en JSON"
+      }
+    }
   }
 }
