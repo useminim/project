@@ -1,7 +1,29 @@
 {
   "title": "Settings",
-  "empty": {
-    "title": "No settings available",
-    "description": "Application settings will appear here."
+  "account": {
+    "title": "Account",
+    "intro": "You don't need an account to use minim. It will back up your workflows and bring them to your other computers.",
+    "unavailable": "Accounts are not available in this version of minim yet. The app works normally without an account.",
+    "signedIn": "Signed in as {{email}}.",
+    "offline": "Offline: you stay signed in as {{email}}. The connection will resume automatically.",
+    "signOut": "Sign out",
+    "signIn": "Sign in",
+    "signUp": "Create an account",
+    "modes": "Sign in or create an account",
+    "email": "Email address",
+    "password": "Password",
+    "passwordHint": "At least 8 characters.",
+    "passwordConfirm": "Confirm password",
+    "passwordMismatch": "The two passwords do not match.",
+    "passwordTooShort": "The password must be at least 8 characters long.",
+    "emailInvalid": "Enter a valid email address.",
+    "forgot": "Forgot your password?",
+    "resetTitle": "Reset your password",
+    "resetIntro": "Enter your account's address: you will receive a link to choose a new password.",
+    "resetSend": "Send the link",
+    "resetSent": "If an account exists with this address, an email has just been sent.",
+    "back": "Back to sign in",
+    "confirmationSent": "Account created. Open the link sent to {{email}} to confirm your address, then sign in.",
+    "signedOut": "You are signed out."
   }
 }

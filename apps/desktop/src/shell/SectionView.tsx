@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "../components/EmptyState";
+import { SettingsScreen } from "../settings/SettingsScreen";
 import type { Section } from "../state/ui";
 import { WorkflowsScreen } from "../workflows/WorkflowsScreen";
 
@@ -9,6 +10,9 @@ export function SectionView({ section }: { section: Section }) {
 
   if (section === "workflows") {
     return <WorkflowsScreen />;
+  }
+  if (section === "settings") {
+    return <SettingsScreen />;
   }
 
   return (

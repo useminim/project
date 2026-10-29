@@ -4,5 +4,13 @@
   "conflict": "This item was changed in the meantime. Reload it and try again.",
   "storage_unavailable": "Local storage could not be opened. Your workflows are unavailable.",
   "io": "A file could not be read or written.",
+  "invalid_credentials": "Incorrect email address or password.",
+  "email_not_confirmed": "First confirm your email address with the link you received.",
+  "email_taken": "An account already exists with this email address.",
+  "weak_password": "This password is too weak: choose a longer one.",
+  "rate_limited": "Too many attempts: wait a few minutes before trying again.",
+  "offline": "Cannot reach the server: check your internet connection.",
+  "session_expired": "Your session has expired: sign in again.",
+  "accounts_unavailable": "Accounts are not available in this version of minim.",
   "internal": "An unexpected error occurred."
 }
