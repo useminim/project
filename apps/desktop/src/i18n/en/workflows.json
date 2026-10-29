@@ -210,5 +210,67 @@
     "quality_out_of_range": "The quality must be between 1 and 100.",
     "unused_convert_option": "This setting does not apply to this format."
   },
-  "editShort": "Edit"
+  "editShort": "Edit",
+  "tryShort": "Try",
+  "try": "Try “{{name}}” on a file",
+  "trial": {
+    "title": "Try on a file",
+    "screenTitle": "Try “{{name}}”",
+    "back": "Back to the list",
+    "intro": "Choose a file: minim first shows what the workflow would do, without changing anything.",
+    "pickTitle": "Choose a file to try",
+    "noFile": "No file chosen",
+    "chooseFile": "Choose a file…",
+    "changeFile": "Change file…",
+    "again": "Run the simulation again",
+    "verdict": {
+      "match": "✓ This file is recognized by the workflow.",
+      "no_match": "✗ This file is not recognized: the workflow would not apply.",
+      "uncertain": "? minim cannot decide for this file yet."
+    },
+    "result": {
+      "match": "met",
+      "no_match": "not met",
+      "uncertain": "undetermined"
+    },
+    "observed": {
+      "dateFound": "date found: {{date}}",
+      "noDate": "no date found",
+      "invalidDateFormat": "invalid date format",
+      "extension": "extension: .{{extension}}",
+      "noExtension": "the file has no extension",
+      "notAvailable": "not available yet"
+    },
+    "simulationTitle": "Simulated (nothing was changed)",
+    "doneTitle": "What was done",
+    "status": {
+      "success": "done",
+      "failed": "failed",
+      "rolled_back": "undone"
+    },
+    "unchanged": "nothing to change",
+    "saveToRun": "Save the workflow to run it for real.",
+    "run": "Run for real",
+    "done": "Done. The file is now here: {{location}}",
+    "rolledBack": "Actions already done were undone.",
+    "failure": {
+      "source_missing": "The file is no longer where it was.",
+      "file_changed": "The file changed during the operation: try again.",
+      "destination_missing": "The destination folder does not exist or cannot be accessed.",
+      "missing_variable": "The new name uses information this file does not have (for example no date in the name).",
+      "invalid_template": "The name template is malformed.",
+      "empty_file_name": "The new name would be empty.",
+      "too_many_collisions": "Too many files already have this name in the folder.",
+      "action_not_available": "This action is not available yet.",
+      "copy_mismatch": "The copy does not match the original: it was deleted.",
+      "io": "A file could not be read or written (permissions, full disk…).",
+      "unsupported_conversion": "This type of file cannot be converted to this format.",
+      "document_encrypted": "The document is password-protected: minim cannot read it.",
+      "document_unreadable": "The document is damaged or unreadable.",
+      "document_too_large": "The document is too large to process.",
+      "timeout": "Processing the document took too long.",
+      "converter_unavailable": "The PDF module is not available. Reinstall minim if the problem persists.",
+      "unknown": "The operation failed."
+    }
+  }
 }

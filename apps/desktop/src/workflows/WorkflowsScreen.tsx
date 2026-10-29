@@ -37,21 +37,28 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { EmptyState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
 import { Switch } from "../components/Switch";
+import { useTrialStore } from "../state/trial";
 import { useUiStore } from "../state/ui";
 import { useWizardStore } from "../state/wizard";
 import { describeActions, describeTrigger } from "./summary";
+import { TrialScreen } from "./trial/TrialScreen";
 import { draftOf, newDraft } from "./wizard/draft";
 import { WizardScreen } from "./wizard/WizardScreen";
 
 /** Liste des workflows, ou le wizard si une création ou une modification est en cours. */
 export function WorkflowsScreen() {
   const wizardOpen = useWizardStore((state) => state.session !== null);
-  return wizardOpen ? <WizardScreen /> : <WorkflowList />;
+  const trialOpen = useTrialStore((state) => state.workflow !== null);
+  if (wizardOpen) {
+    return <WizardScreen />;
+  }
+  return trialOpen ? <TrialScreen /> : <WorkflowList />;
 }
 
 function WorkflowList() {
   const { t } = useTranslation();
   const startWizard = useWizardStore((state) => state.start);
+  const openTrial = useTrialStore((state) => state.open);
   const showToast = useUiStore((state) => state.showToast);
   const [workflows, setWorkflows] = useState<Workflow[] | null>(null);
   const [toDelete, setToDelete] = useState<Workflow | null>(null);
@@ -160,6 +167,7 @@ function WorkflowList() {
             onMove={move}
             onToggle={toggle}
             onEdit={edit}
+            onTry={openTrial}
             onDelete={setToDelete}
           />
         </>
@@ -190,6 +198,7 @@ interface SortableWorkflowsProps {
   onMove: (from: number, to: number) => void;
   onToggle: (workflow: Workflow) => void;
   onEdit: (workflow: Workflow) => void;
+  onTry: (workflow: Workflow) => void;
   onDelete: (workflow: Workflow) => void;
 }
 
@@ -198,6 +207,7 @@ function SortableWorkflows({
   onMove,
   onToggle,
   onEdit,
+  onTry,
   onDelete,
 }: SortableWorkflowsProps) {
   const { t } = useTranslation();
@@ -250,6 +260,7 @@ function SortableWorkflows({
               onMoveDown={() => onMove(index, index + 1)}
               onToggle={() => onToggle(workflow)}
               onEdit={() => onEdit(workflow)}
+              onTry={() => onTry(workflow)}
               onDelete={() => onDelete(workflow)}
             />
           ))}
@@ -267,6 +278,7 @@ interface WorkflowRowProps {
   onMoveDown: () => void;
   onToggle: () => void;
   onEdit: () => void;
+  onTry: () => void;
   onDelete: () => void;
 }
 
@@ -278,6 +290,7 @@ function WorkflowRow({
   onMoveDown,
   onToggle,
   onEdit,
+  onTry,
   onDelete,
 }: WorkflowRowProps) {
   const { t } = useTranslation();
@@ -350,6 +363,9 @@ function WorkflowRow({
           onClick={onMoveDown}
         >
           <span aria-hidden="true">↓</span>
+        </Button>
+        <Button aria-label={t("workflows.try", { name })} onClick={onTry}>
+          {t("workflows.tryShort")}
         </Button>
         <Button aria-label={t("workflows.edit", { name })} onClick={onEdit}>
           {t("workflows.editShort")}

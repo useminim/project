@@ -6,6 +6,7 @@ import { Switch } from "../../components/Switch";
 import { TextField } from "../../components/TextField";
 import { useWizardStore } from "../../state/wizard";
 import { describeActions, describeTrigger } from "../summary";
+import { TrialPanel } from "../trial/TrialPanel";
 import { issuesAt } from "./draft";
 import { issueMessages, type WizardIssue } from "./WizardScreen";
 
@@ -66,6 +67,13 @@ export function SummaryStep({
           />{" "}
           {t("workflows.wizard.continueOnMatch")}
         </label>
+      </details>
+      <details className="wizard__advanced wizard__trial">
+        <summary>{t("workflows.trial.title")}</summary>
+        <TrialPanel
+          draft={{ ...draft, name: proposedName }}
+          workflowId={session.mode === "edit" && !session.dirty ? session.workflowId : undefined}
+        />
       </details>
     </div>
   );

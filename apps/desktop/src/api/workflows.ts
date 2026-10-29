@@ -4,6 +4,7 @@
 
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { NamePreview } from "../bindings/NamePreview";
+import type { TrialOutcome } from "../bindings/TrialOutcome";
 import type { ValidationError } from "../bindings/ValidationError";
 import type { Workflow } from "../bindings/Workflow";
 import type { WorkflowDraft } from "../bindings/WorkflowDraft";
@@ -68,4 +69,14 @@ export function onWorkflowsChanged(onChange: () => void): Promise<UnlistenFn> {
 /** Nom que recevrait un fichier nommé `sample` avec le modèle `template` (aperçu du wizard). */
 export function previewName(template: string, sample: string): Promise<NamePreview> {
   return invokeCommand<NamePreview>("preview_name", { template, sample });
+}
+
+/** Ce que ferait le brouillon sur le fichier `path`, sans rien modifier. */
+export function previewWorkflowOnFile(draft: WorkflowDraft, path: string): Promise<TrialOutcome> {
+  return invokeCommand<TrialOutcome>("preview_workflow_on_file", { draft, path });
+}
+
+/** Exécute pour de vrai le workflow enregistré `id` sur le fichier `path`. */
+export function runWorkflowOnFile(id: WorkflowId, path: string): Promise<TrialOutcome> {
+  return invokeCommand<TrialOutcome>("run_workflow_on_file", { id, path });
 }

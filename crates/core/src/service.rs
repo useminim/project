@@ -112,8 +112,15 @@ impl WorkflowService {
     /// enregistrer.
     #[must_use]
     pub fn validate(&self, draft: &WorkflowDraft) -> Vec<ValidationError> {
+        self.candidate(draft).validate().err().unwrap_or_default()
+    }
+
+    /// Workflow non enregistré construit à partir de `draft`, pour le valider
+    /// ou l'essayer (identifiant nul, version 1).
+    #[must_use]
+    pub fn candidate(&self, draft: &WorkflowDraft) -> Workflow {
         let now = self.clock.now();
-        let candidate = Workflow {
+        Workflow {
             schema_version: CURRENT_SCHEMA_VERSION,
             id: WorkflowId::from_ulid(Ulid::nil()),
             name: draft.name.clone(),
@@ -126,8 +133,7 @@ impl WorkflowService {
             owner: LOCAL_OWNER,
             created_at: now,
             updated_at: now,
-        };
-        candidate.validate().err().unwrap_or_default()
+        }
     }
 
     /// Crée un workflow, placé après tous les autres.

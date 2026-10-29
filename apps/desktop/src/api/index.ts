@@ -1,4 +1,4 @@
-export { pickFolder } from "./dialog";
+export { pickFile, pickFolder } from "./dialog";
 export { ApiError, invokeCommand, isCommandError, toCommandError } from "./invoke";
 export { getStorageStatus } from "./storage";
 export {
@@ -8,7 +8,9 @@ export {
   listWorkflows,
   onWorkflowsChanged,
   previewName,
+  previewWorkflowOnFile,
   reorderWorkflows,
+  runWorkflowOnFile,
   setWorkflowEnabled,
   updateWorkflow,
   validateWorkflow,
