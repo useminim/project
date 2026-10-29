@@ -8,6 +8,7 @@ import {
   describeCondition,
   describeTrigger,
   folderName,
+  readableTemplate,
 } from "./summary";
 
 const t = i18n.t.bind(i18n);
@@ -123,6 +124,13 @@ describe("whole sentences", () => {
         { type: "copy", destination: "/a/b" },
       ]),
     ).toBe("Convert to PDF, then copy to b");
+  });
+
+  it("shows name template variables in plain words", () => {
+    expect(readableTemplate(t, "{date_in_name:YYYY-MM-DD}_{original_name}.{extension}")).toBe(
+      "[Date dans le nom]_[Nom d'origine].[Extension]",
+    );
+    expect(readableTemplate(t, "{client}_{today}")).toBe("{client}_[Date du jour]");
   });
 
   it("keeps the last folder of any path", () => {

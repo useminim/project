@@ -5,8 +5,6 @@
     "description": "A workflow recognizes a type of document and applies actions to it: rename, move, convert…"
   },
   "create": "Create a workflow",
-  "createSoon": "Creating workflows comes in the next version.",
-  "addSamples": "Add samples (development)",
   "orderHelp": "Workflows are tried from top to bottom: the first one that recognizes a document applies.",
   "list": "Workflows, in the order they are tried",
   "when": "When",
@@ -68,5 +66,149 @@
         "json_other": "extract {{count}} fields to JSON"
       }
     }
-  }
+  },
+  "edit": "Edit “{{name}}”",
+  "wizard": {
+    "titleCreate": "New workflow",
+    "titleEdit": "Edit “{{name}}”",
+    "progress": "Steps",
+    "stepAnnounce": "Step {{number}} of {{total}}: {{title}}",
+    "steps": {
+      "documents": "Which documents?",
+      "actions": "What to do?",
+      "summary": "Summary"
+    },
+    "intro": {
+      "documents": "Describe the documents this workflow should recognize.",
+      "actions": "Choose what minim does with these documents, in order.",
+      "summary": "Check the workflow, name it, then save it."
+    },
+    "back": "Back",
+    "next": "Next",
+    "create": "Create workflow",
+    "save": "Save",
+    "cancel": "Cancel",
+    "created": "Workflow created.",
+    "saved": "Changes saved.",
+    "abandonTitle": "Discard this workflow?",
+    "abandonDescription": "What you entered will be lost.",
+    "abandonConfirm": "Discard",
+    "fixErrors": "Fix the highlighted points to continue.",
+    "conflict": "This workflow was changed elsewhere in the meantime. Close the wizard and open it again to start from the latest version.",
+    "advanced": "Advanced options",
+    "remove": "Remove",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "match": {
+      "legend": "The workflow applies when",
+      "all": "all conditions are met",
+      "any": "at least one condition is met"
+    },
+    "conditionNumber": "Condition {{number}}",
+    "conditionType": "Condition type",
+    "addCondition": "Add a condition",
+    "conditionTypes": {
+      "file_name_contains": "The file name contains…",
+      "file_name_matches_date": "The name contains a date",
+      "file_extension_is": "The file is a…"
+    },
+    "nameContainsLabel": "Text to find in the name",
+    "nameContainsHint": "For example “invoice”: “Invoice_march.pdf” will be recognized.",
+    "caseSensitive": "Match upper and lower case",
+    "dateFormatLabel": "Date format (optional)",
+    "dateFormatHint": "Using YYYY, MM and DD, for example DD-MM-YYYY. Empty: all common dates.",
+    "fileTypeLabel": "File type",
+    "fileTypes": {
+      "pdf": "PDF document",
+      "image": "Image (PNG or JPEG)",
+      "word": "Word document",
+      "excel": "Excel workbook",
+      "custom": "Other extensions…"
+    },
+    "extensionsLabel": "Extensions, separated by commas",
+    "extensionsHint": "Without the dot, for example “pdf, odt”.",
+    "noActions": "No actions yet: add one below.",
+    "actionNumber": "Action {{number}}: {{type}}",
+    "addAction": "Add an action",
+    "actionTypes": {
+      "rename": "Rename",
+      "move": "Move",
+      "copy": "Copy",
+      "convert": "Convert"
+    },
+    "templateLabel": "New name",
+    "templateHint": "Click an item to insert it into the name.",
+    "variables": {
+      "original_name": "Original name",
+      "extension": "Extension",
+      "date_in_name": "Date in the name",
+      "file_date": "File date",
+      "today": "Today's date"
+    },
+    "insertVariable": "Insert: {{variable}}",
+    "sampleLabel": "Sample file name",
+    "previewLabel": "Preview",
+    "preview": {
+      "name": "“{{sample}}” will become “{{name}}”",
+      "invalid_template": "The template is malformed: check the braces.",
+      "missing_variable": "This file has no value for “{{variable}}”: renaming would fail.",
+      "invalid_format": "The format of “{{variable}}” is invalid.",
+      "empty_name": "The resulting name would be empty."
+    },
+    "invalidTemplate": "The name template is malformed: check the braces.",
+    "folderLabel": "Destination folder",
+    "noFolder": "No folder chosen",
+    "chooseFolder": "Choose a folder…",
+    "changeFolder": "Change folder…",
+    "folderDialogTitle": "Choose the destination folder",
+    "createFolders": "Create the folder if it does not exist",
+    "convertLabel": "Convert to",
+    "convertFormats": {
+      "pdf": "PDF (for an image)",
+      "png": "PNG images (one per page)",
+      "jpeg": "JPEG images (one per page)"
+    },
+    "dpiLabel": "Resolution, in dots per inch",
+    "qualityLabel": "JPEG quality, from 1 to 100",
+    "summaryLabel": "What the workflow will do",
+    "when": "When",
+    "then": "Then",
+    "nameLabel": "Workflow name",
+    "nameHint": "Suggested from the conditions, editable.",
+    "enableNow": "Turn the workflow on right away",
+    "continueOnMatch": "Also try the following workflows after this one",
+    "proposedName": {
+      "pdf": "PDF files",
+      "image": "Images",
+      "word": "Word documents",
+      "excel": "Excel workbooks",
+      "default": "New workflow"
+    }
+  },
+  "validation": {
+    "unsupported_schema_version": "This workflow comes from a newer version of minim.",
+    "empty_name": "Give the workflow a name.",
+    "name_too_long": "The name must not exceed {{max}} characters.",
+    "zero_version": "Invalid version.",
+    "updated_before_created": "Inconsistent workflow dates.",
+    "no_conditions": "Add at least one condition.",
+    "empty_group": "This group of conditions is empty.",
+    "group_too_deep": "Too many nested groups.",
+    "empty_search_text": "Enter the text to find.",
+    "empty_date_format": "Enter a date format, or leave the field empty.",
+    "invalid_date_format": "The format must contain YYYY, MM and DD once each, separated by symbols.",
+    "no_extensions": "Enter at least one extension.",
+    "invalid_extension": "“{{extension}}” is not a valid extension: letters and digits only.",
+    "zero_min_rows": "The number of rows must be at least 1.",
+    "threshold_out_of_range": "The threshold must be between 0 and 1.",
+    "no_actions": "Add at least one action.",
+    "path_separator_in_name": "The new name must not contain “/” or “\\”.",
+    "empty_destination": "Choose a folder.",
+    "relative_destination": "Choose a full folder with the button.",
+    "no_fields_to_extract": "Choose at least one field to extract.",
+    "dpi_out_of_range": "The resolution must be between {{min}} and {{max}}.",
+    "quality_out_of_range": "The quality must be between 1 and 100.",
+    "unused_convert_option": "This setting does not apply to this format."
+  },
+  "editShort": "Edit"
 }

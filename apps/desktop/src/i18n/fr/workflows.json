@@ -5,8 +5,6 @@
     "description": "Un workflow reconnaît un type de document et lui applique des actions : renommer, déplacer, convertir…"
   },
   "create": "Créer un workflow",
-  "createSoon": "La création de workflows arrive dans la prochaine version.",
-  "addSamples": "Ajouter des exemples (développement)",
   "orderHelp": "Les workflows sont essayés de haut en bas : le premier qui reconnaît un document s'applique.",
   "list": "Liste des workflows, dans l'ordre où ils sont essayés",
   "when": "Quand",
@@ -68,5 +66,149 @@
         "json_other": "extraire {{count}} champs en JSON"
       }
     }
-  }
+  },
+  "edit": "Modifier « {{name}} »",
+  "wizard": {
+    "titleCreate": "Nouveau workflow",
+    "titleEdit": "Modifier « {{name}} »",
+    "progress": "Étapes",
+    "stepAnnounce": "Étape {{number}} sur {{total}} : {{title}}",
+    "steps": {
+      "documents": "Quels documents ?",
+      "actions": "Que faire ?",
+      "summary": "Récapitulatif"
+    },
+    "intro": {
+      "documents": "Décrivez les documents que ce workflow doit reconnaître.",
+      "actions": "Choisissez ce que minim fait de ces documents, dans l'ordre.",
+      "summary": "Vérifiez le workflow, donnez-lui un nom, puis enregistrez-le."
+    },
+    "back": "Précédent",
+    "next": "Suivant",
+    "create": "Créer le workflow",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "created": "Workflow créé.",
+    "saved": "Modifications enregistrées.",
+    "abandonTitle": "Abandonner ce workflow ?",
+    "abandonDescription": "Les informations saisies seront perdues.",
+    "abandonConfirm": "Abandonner",
+    "fixErrors": "Corrigez les points signalés pour continuer.",
+    "conflict": "Ce workflow a été modifié ailleurs entre-temps. Fermez le wizard et rouvrez-le pour repartir de la dernière version.",
+    "advanced": "Options avancées",
+    "remove": "Retirer",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "match": {
+      "legend": "Le workflow s'applique quand",
+      "all": "toutes les conditions sont remplies",
+      "any": "au moins une condition est remplie"
+    },
+    "conditionNumber": "Condition {{number}}",
+    "conditionType": "Type de condition",
+    "addCondition": "Ajouter une condition",
+    "conditionTypes": {
+      "file_name_contains": "Le nom du fichier contient…",
+      "file_name_matches_date": "Le nom contient une date",
+      "file_extension_is": "Le fichier est un…"
+    },
+    "nameContainsLabel": "Texte à trouver dans le nom",
+    "nameContainsHint": "Par exemple « facture » : « Facture_mars.pdf » sera reconnu.",
+    "caseSensitive": "Respecter les majuscules et minuscules",
+    "dateFormatLabel": "Format de la date (facultatif)",
+    "dateFormatHint": "Avec AAAA, MM et JJ écrits YYYY, MM et DD, par exemple DD-MM-YYYY. Vide : toutes les dates courantes.",
+    "fileTypeLabel": "Type de fichier",
+    "fileTypes": {
+      "pdf": "Document PDF",
+      "image": "Image (PNG ou JPEG)",
+      "word": "Document Word",
+      "excel": "Classeur Excel",
+      "custom": "Autres extensions…"
+    },
+    "extensionsLabel": "Extensions, séparées par des virgules",
+    "extensionsHint": "Sans le point, par exemple « pdf, odt ».",
+    "noActions": "Aucune action pour l'instant : ajoutez-en une ci-dessous.",
+    "actionNumber": "Action {{number}} : {{type}}",
+    "addAction": "Ajouter une action",
+    "actionTypes": {
+      "rename": "Renommer",
+      "move": "Déplacer",
+      "copy": "Copier",
+      "convert": "Convertir"
+    },
+    "templateLabel": "Nouveau nom",
+    "templateHint": "Cliquez sur une information pour l'insérer dans le nom.",
+    "variables": {
+      "original_name": "Nom d'origine",
+      "extension": "Extension",
+      "date_in_name": "Date dans le nom",
+      "file_date": "Date du fichier",
+      "today": "Date du jour"
+    },
+    "insertVariable": "Insérer : {{variable}}",
+    "sampleLabel": "Nom d'un fichier d'exemple",
+    "previewLabel": "Aperçu",
+    "preview": {
+      "name": "« {{sample}} » deviendra « {{name}} »",
+      "invalid_template": "Le modèle est mal écrit : vérifiez les accolades.",
+      "missing_variable": "Ce fichier n'a pas de valeur pour « {{variable}} » : le renommage échouerait.",
+      "invalid_format": "Le format de « {{variable}} » est invalide.",
+      "empty_name": "Le nom obtenu serait vide."
+    },
+    "invalidTemplate": "Le modèle de nom est mal écrit : vérifiez les accolades.",
+    "folderLabel": "Dossier de destination",
+    "noFolder": "Aucun dossier choisi",
+    "chooseFolder": "Choisir un dossier…",
+    "changeFolder": "Changer de dossier…",
+    "folderDialogTitle": "Choisir le dossier de destination",
+    "createFolders": "Créer le dossier s'il n'existe pas",
+    "convertLabel": "Convertir en",
+    "convertFormats": {
+      "pdf": "PDF (pour une image)",
+      "png": "Images PNG (une par page)",
+      "jpeg": "Images JPEG (une par page)"
+    },
+    "dpiLabel": "Résolution, en points par pouce",
+    "qualityLabel": "Qualité JPEG, de 1 à 100",
+    "summaryLabel": "Ce que fera le workflow",
+    "when": "Quand",
+    "then": "Alors",
+    "nameLabel": "Nom du workflow",
+    "nameHint": "Proposé d'après les conditions, modifiable.",
+    "enableNow": "Activer le workflow dès maintenant",
+    "continueOnMatch": "Essayer aussi les workflows suivants après celui-ci",
+    "proposedName": {
+      "pdf": "Fichiers PDF",
+      "image": "Images",
+      "word": "Documents Word",
+      "excel": "Classeurs Excel",
+      "default": "Nouveau workflow"
+    }
+  },
+  "validation": {
+    "unsupported_schema_version": "Ce workflow vient d'une version plus récente de minim.",
+    "empty_name": "Donnez un nom au workflow.",
+    "name_too_long": "Le nom ne doit pas dépasser {{max}} caractères.",
+    "zero_version": "Version invalide.",
+    "updated_before_created": "Dates du workflow incohérentes.",
+    "no_conditions": "Ajoutez au moins une condition.",
+    "empty_group": "Ce groupe de conditions est vide.",
+    "group_too_deep": "Trop de groupes imbriqués.",
+    "empty_search_text": "Indiquez le texte à trouver.",
+    "empty_date_format": "Indiquez un format de date, ou laissez le champ vide.",
+    "invalid_date_format": "Le format doit contenir YYYY, MM et DD une fois chacun, séparés par des signes.",
+    "no_extensions": "Indiquez au moins une extension.",
+    "invalid_extension": "« {{extension}} » n'est pas une extension valide : lettres et chiffres seulement.",
+    "zero_min_rows": "Le nombre de lignes doit être d'au moins 1.",
+    "threshold_out_of_range": "Le seuil doit être compris entre 0 et 1.",
+    "no_actions": "Ajoutez au moins une action.",
+    "path_separator_in_name": "Le nouveau nom ne doit pas contenir « / » ni « \\ ».",
+    "empty_destination": "Choisissez un dossier.",
+    "relative_destination": "Choisissez un dossier complet avec le bouton.",
+    "no_fields_to_extract": "Choisissez au moins un champ à extraire.",
+    "dpi_out_of_range": "La résolution doit être comprise entre {{min}} et {{max}}.",
+    "quality_out_of_range": "La qualité doit être comprise entre 1 et 100.",
+    "unused_convert_option": "Ce réglage ne s'applique pas à ce format."
+  },
+  "editShort": "Modifier"
 }
