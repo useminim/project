@@ -22,6 +22,7 @@ minim-extract.workspace = true
 minim-store.workspace = true
 serde.workspace = true
 tauri.workspace = true
+tauri-plugin-dialog.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-appender.workspace = true
