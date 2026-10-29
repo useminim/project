@@ -3,6 +3,7 @@
 //! Ces types font foi pour le modèle de données ; leur forme JSON est celle
 //! échangée avec l'interface et synchronisée avec le cloud.
 
+pub mod account;
 pub mod action;
 pub mod actions;
 pub mod document;
@@ -22,6 +23,7 @@ pub mod trigger;
 pub mod waiting_zone;
 pub mod workflow;
 
+pub use account::{AccountService, AccountStatus, SignUpResult};
 pub use action::{
     Action, ActionKind, ConvertFormat, DEFAULT_DPI, DEFAULT_JPEG_QUALITY, DPI_RANGE, ExportFormat,
 };
