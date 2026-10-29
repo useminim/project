@@ -16,6 +16,8 @@
     "allow-update-workflow",
     "allow-delete-workflow",
     "allow-set-workflow-enabled",
-    "allow-reorder-workflows"
+    "allow-reorder-workflows",
+    "allow-preview-workflow-on-file",
+    "allow-run-workflow-on-file"
   ]
 }

@@ -23,6 +23,8 @@ const COMMANDS: &[&str] = &[
     "delete_workflow",
     "set_workflow_enabled",
     "reorder_workflows",
+    "preview_workflow_on_file",
+    "run_workflow_on_file",
 ];
 
 const WINDOWS_MANIFEST: &str = "windows-app-manifest.xml";

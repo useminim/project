@@ -144,25 +144,14 @@ mod tests {
     use minim_core::testing::memory::InMemoryWorkflowRepository;
     use serde_json::{Value, json};
     use tauri::Listener as _;
-    use tauri::ipc::{CallbackFn, InvokeBody};
-    use tauri::test::{INVOKE_KEY, MockRuntime, get_ipc_response, mock_builder};
-    use tauri::webview::{InvokeRequest, WebviewWindow, WebviewWindowBuilder};
+    use tauri::test::{MockRuntime, mock_builder};
+    use tauri::webview::WebviewWindow;
 
     use super::*;
+    use crate::commands::testing::{call, mock_app};
 
-    /// Application simulée, avec la configuration et la capability réelles.
     fn app(workflows: Workflows) -> (tauri::App<MockRuntime>, WebviewWindow<MockRuntime>) {
-        let app = mock_builder()
-            .manage(workflows)
-            .invoke_handler(crate::commands::handler())
-            // `test = true` : sans l'Info.plist embarqué sous macOS, déjà défini
-            // par `run()` dans cette bibliothèque (symbole en double sinon).
-            .build(tauri::generate_context!(test = true))
-            .unwrap();
-        let window = WebviewWindowBuilder::new(&app, "main", tauri::WebviewUrl::default())
-            .build()
-            .unwrap();
-        (app, window)
+        mock_app(mock_builder().manage(workflows))
     }
 
     fn service() -> Workflows {
@@ -171,28 +160,6 @@ mod tests {
             Arc::new(SystemClock),
             Arc::new(SequentialIds::default()),
         )))
-    }
-
-    fn call(window: &WebviewWindow<MockRuntime>, cmd: &str, body: Value) -> Result<Value, Value> {
-        get_ipc_response(
-            window,
-            InvokeRequest {
-                cmd: cmd.into(),
-                callback: CallbackFn(0),
-                error: CallbackFn(1),
-                url: if cfg!(windows) {
-                    "http://tauri.localhost"
-                } else {
-                    "tauri://localhost"
-                }
-                .parse()
-                .unwrap(),
-                body: InvokeBody::Json(body),
-                headers: Default::default(),
-                invoke_key: INVOKE_KEY.to_owned(),
-            },
-        )
-        .map(|response| response.deserialize::<Value>().unwrap())
     }
 
     fn draft(name: &str) -> Value {

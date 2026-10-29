@@ -6,6 +6,9 @@
 //! déclarée dans `build.rs` et autorisée dans `capabilities/default.json`.
 
 pub mod storage;
+#[cfg(test)]
+mod testing;
+pub mod trials;
 pub mod workflows;
 
 use tauri::Runtime;
@@ -27,6 +30,8 @@ pub fn handler<R: Runtime>() -> impl Fn(Invoke<R>) -> bool + Send + Sync + 'stat
         workflows::delete_workflow,
         workflows::set_workflow_enabled,
         workflows::reorder_workflows,
+        trials::preview_workflow_on_file,
+        trials::run_workflow_on_file,
     ]
 }
 

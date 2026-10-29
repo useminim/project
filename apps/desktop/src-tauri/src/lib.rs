@@ -9,10 +9,11 @@ pub mod storage;
 
 use std::sync::Arc;
 
-use minim_core::WorkflowService;
 use minim_core::ports::{SystemClock, UlidGenerator};
+use minim_core::{TrialService, WorkflowService};
 use tauri::Manager;
 
+use crate::commands::trials::Trials;
 use crate::commands::workflows::Workflows;
 
 /// Construit et exécute l'application Tauri jusqu'à la fermeture de la dernière fenêtre.
@@ -55,19 +56,38 @@ pub fn run() -> tauri::Result<()> {
                 recovered = ?storage.status.recovered,
                 "stockage local"
             );
+            let worker = pdf::prepare(&app.path().resource_dir()?);
+            let converter = pdf::converter(worker.as_ref());
+            if let Some(worker) = worker {
+                app.manage(worker);
+            }
+
+            let clock = Arc::new(SystemClock);
+            let ids = Arc::new(UlidGenerator);
             let workflows = storage.repositories.as_ref().map(|repositories| {
                 WorkflowService::new(
                     Arc::clone(&repositories.workflows),
-                    Arc::new(SystemClock),
-                    Arc::new(UlidGenerator),
+                    clock.clone(),
+                    ids.clone(),
                 )
             });
+            let trials = storage.repositories.as_ref().zip(workflows.clone()).map(
+                |(repositories, workflows)| {
+                    TrialService::new(
+                        workflows,
+                        Arc::clone(&repositories.execution_logs),
+                        converter,
+                        clock,
+                        ids,
+                        Arc::new(|date: chrono::DateTime<chrono::Utc>| {
+                            date.with_timezone(&chrono::Local).date_naive()
+                        }),
+                    )
+                },
+            );
             app.manage(Workflows(workflows));
+            app.manage(Trials(trials));
             app.manage(storage);
-
-            if let Some(worker) = pdf::prepare(&app.path().resource_dir()?) {
-                app.manage(worker);
-            }
             Ok(())
         })
         .invoke_handler(commands::handler())

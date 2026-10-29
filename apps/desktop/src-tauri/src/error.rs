@@ -8,7 +8,7 @@
 use std::fmt;
 use std::io;
 
-use minim_core::{ValidationError, WorkflowServiceError};
+use minim_core::{TrialError, ValidationError, WorkflowServiceError};
 use serde::Serialize;
 
 /// Catégorie stable d'une erreur, sérialisée en `snake_case`.
@@ -158,6 +158,15 @@ impl From<WorkflowServiceError> for CommandError {
             WorkflowServiceError::Invalid(issues) => issues.into(),
             // Les erreurs du stockage ne contiennent que des identifiants.
             WorkflowServiceError::Store(error) => Self::internal(&error),
+        }
+    }
+}
+
+impl From<TrialError> for CommandError {
+    fn from(error: TrialError) -> Self {
+        match error {
+            TrialError::Workflow(error) => error.into(),
+            TrialError::File(error) => error.into(),
         }
     }
 }
