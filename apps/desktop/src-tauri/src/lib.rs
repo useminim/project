@@ -35,6 +35,7 @@ pub fn run() -> tauri::Result<()> {
         std::process::exit(code);
     }
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let log_dir = app.path().app_log_dir()?;
             let guard = logging::init(&log_dir)?;

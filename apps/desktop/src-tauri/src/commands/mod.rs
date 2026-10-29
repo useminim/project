@@ -21,6 +21,7 @@ pub fn handler<R: Runtime>() -> impl Fn(Invoke<R>) -> bool + Send + Sync + 'stat
         workflows::list_workflows,
         workflows::get_workflow,
         workflows::validate_workflow,
+        workflows::preview_name,
         workflows::create_workflow,
         workflows::update_workflow,
         workflows::delete_workflow,

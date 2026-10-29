@@ -24,7 +24,6 @@ import type { ParseKeys } from "i18next";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  createWorkflow,
   deleteWorkflow,
   listWorkflows,
   onWorkflowsChanged,
@@ -39,11 +38,20 @@ import { EmptyState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
 import { Switch } from "../components/Switch";
 import { useUiStore } from "../state/ui";
-import { sampleDrafts } from "./samples";
+import { useWizardStore } from "../state/wizard";
 import { describeActions, describeTrigger } from "./summary";
+import { draftOf, newDraft } from "./wizard/draft";
+import { WizardScreen } from "./wizard/WizardScreen";
 
+/** Liste des workflows, ou le wizard si une création ou une modification est en cours. */
 export function WorkflowsScreen() {
+  const wizardOpen = useWizardStore((state) => state.session !== null);
+  return wizardOpen ? <WizardScreen /> : <WorkflowList />;
+}
+
+function WorkflowList() {
   const { t } = useTranslation();
+  const startWizard = useWizardStore((state) => state.start);
   const showToast = useUiStore((state) => state.showToast);
   const [workflows, setWorkflows] = useState<Workflow[] | null>(null);
   const [toDelete, setToDelete] = useState<Workflow | null>(null);
@@ -111,21 +119,22 @@ export function WorkflowsScreen() {
       .catch(report);
   };
 
-  const addSamples = async () => {
-    try {
-      for (const draft of sampleDrafts()) {
-        await createWorkflow(draft);
-      }
-    } catch (reason) {
-      report(reason);
-    }
-  };
-
   const createButton = (
-    <Button variant="primary" onClick={() => showToast("info", "workflows.createSoon")}>
+    <Button
+      variant="primary"
+      onClick={() => startWizard({ mode: "create", draft: newDraft(), nameEdited: false })}
+    >
       {t("workflows.create")}
     </Button>
   );
+  const edit = (workflow: Workflow) =>
+    startWizard({
+      mode: "edit",
+      workflowId: workflow.id,
+      version: workflow.version,
+      draft: draftOf(workflow),
+      nameEdited: true,
+    });
 
   return (
     <section className="section" aria-labelledby="section-title">
@@ -141,22 +150,16 @@ export function WorkflowsScreen() {
         <EmptyState
           title={t("workflows.empty.title")}
           description={t("workflows.empty.description")}
-          action={
-            <>
-              {createButton}
-              {import.meta.env.DEV && (
-                <Button onClick={() => void addSamples()}>{t("workflows.addSamples")}</Button>
-              )}
-            </>
-          }
+          action={createButton}
         />
       ) : (
         <>
           <p className="section__help">{t("workflows.orderHelp")}</p>
-          <WorkflowList
+          <SortableWorkflows
             workflows={workflows}
             onMove={move}
             onToggle={toggle}
+            onEdit={edit}
             onDelete={setToDelete}
           />
         </>
@@ -182,14 +185,21 @@ export function WorkflowsScreen() {
   );
 }
 
-interface WorkflowListProps {
+interface SortableWorkflowsProps {
   workflows: Workflow[];
   onMove: (from: number, to: number) => void;
   onToggle: (workflow: Workflow) => void;
+  onEdit: (workflow: Workflow) => void;
   onDelete: (workflow: Workflow) => void;
 }
 
-function WorkflowList({ workflows, onMove, onToggle, onDelete }: WorkflowListProps) {
+function SortableWorkflows({
+  workflows,
+  onMove,
+  onToggle,
+  onEdit,
+  onDelete,
+}: SortableWorkflowsProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -239,6 +249,7 @@ function WorkflowList({ workflows, onMove, onToggle, onDelete }: WorkflowListPro
               onMoveUp={() => onMove(index, index - 1)}
               onMoveDown={() => onMove(index, index + 1)}
               onToggle={() => onToggle(workflow)}
+              onEdit={() => onEdit(workflow)}
               onDelete={() => onDelete(workflow)}
             />
           ))}
@@ -255,6 +266,7 @@ interface WorkflowRowProps {
   onMoveUp: () => void;
   onMoveDown: () => void;
   onToggle: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
@@ -265,6 +277,7 @@ function WorkflowRow({
   onMoveUp,
   onMoveDown,
   onToggle,
+  onEdit,
   onDelete,
 }: WorkflowRowProps) {
   const { t } = useTranslation();
@@ -337,6 +350,9 @@ function WorkflowRow({
           onClick={onMoveDown}
         >
           <span aria-hidden="true">↓</span>
+        </Button>
+        <Button aria-label={t("workflows.edit", { name })} onClick={onEdit}>
+          {t("workflows.editShort")}
         </Button>
         <Button
           className="button--icon"

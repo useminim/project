@@ -3,6 +3,7 @@
 // émis après chaque modification.
 
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { NamePreview } from "../bindings/NamePreview";
 import type { ValidationError } from "../bindings/ValidationError";
 import type { Workflow } from "../bindings/Workflow";
 import type { WorkflowDraft } from "../bindings/WorkflowDraft";
@@ -62,4 +63,9 @@ export function reorderWorkflows(ordered: WorkflowId[]): Promise<Workflow[]> {
 /** Appelle `onChange` après chaque modification des workflows ; renvoie la fonction de désabonnement. */
 export function onWorkflowsChanged(onChange: () => void): Promise<UnlistenFn> {
   return listen(WORKFLOWS_CHANGED, () => onChange());
+}
+
+/** Nom que recevrait un fichier nommé `sample` avec le modèle `template` (aperçu du wizard). */
+export function previewName(template: string, sample: string): Promise<NamePreview> {
+  return invokeCommand<NamePreview>("preview_name", { template, sample });
 }

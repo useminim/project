@@ -17,6 +17,7 @@ const COMMANDS: &[&str] = &[
     "list_workflows",
     "get_workflow",
     "validate_workflow",
+    "preview_name",
     "create_workflow",
     "update_workflow",
     "delete_workflow",

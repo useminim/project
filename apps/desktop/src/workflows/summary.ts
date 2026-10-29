@@ -74,11 +74,33 @@ export function describeTrigger(t: TFunction, trigger: Trigger): string {
   return capitalize(joinConditions(t, trigger.match, trigger.conditions));
 }
 
+const templateVariables = [
+  "original_name",
+  "extension",
+  "date_in_name",
+  "file_date",
+  "today",
+] as const;
+
+/**
+ * Modèle de nom lisible : chaque variable connue devient son nom en clair
+ * (« [Date dans le nom]_[Nom d'origine] »), les autres restent telles quelles.
+ */
+export function readableTemplate(t: TFunction, template: string): string {
+  return template.replace(/\{([a-z_]+)(?::[^}]*)?\}/g, (variable, name: string) =>
+    (templateVariables as readonly string[]).includes(name)
+      ? `[${t(`workflows.wizard.variables.${name as (typeof templateVariables)[number]}`)}]`
+      : variable,
+  );
+}
+
 /** Une action, sans majuscule initiale (« déplacer vers Comptabilité »). */
 export function describeAction(t: TFunction, action: Action): string {
   switch (action.type) {
     case "rename":
-      return t("workflows.summary.action.rename", { template: action.template });
+      return t("workflows.summary.action.rename", {
+        template: readableTemplate(t, action.template),
+      });
     case "move":
       return t("workflows.summary.action.move", { folder: folderName(action.destination) });
     case "copy":

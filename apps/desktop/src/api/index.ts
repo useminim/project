@@ -1,3 +1,4 @@
+export { pickFolder } from "./dialog";
 export { ApiError, invokeCommand, isCommandError, toCommandError } from "./invoke";
 export { getStorageStatus } from "./storage";
 export {
@@ -6,6 +7,7 @@ export {
   getWorkflow,
   listWorkflows,
   onWorkflowsChanged,
+  previewName,
   reorderWorkflows,
   setWorkflowEnabled,
   updateWorkflow,

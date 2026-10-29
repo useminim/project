@@ -1,13 +1,14 @@
-import { type InputHTMLAttributes, useId } from "react";
+import { type InputHTMLAttributes, type Ref, useId } from "react";
 
 interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "id"> {
   label: string;
   hint?: string;
   error?: string;
+  ref?: Ref<HTMLInputElement>;
 }
 
 /** Champ de texte avec son libellé, une aide et un message d'erreur reliés au champ. */
-export function TextField({ label, hint, error, className, ...props }: TextFieldProps) {
+export function TextField({ label, hint, error, className, ref, ...props }: TextFieldProps) {
   const id = useId();
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
@@ -19,6 +20,7 @@ export function TextField({ label, hint, error, className, ...props }: TextField
         {label}
       </label>
       <input
+        ref={ref}
         id={id}
         className="field__input"
         aria-invalid={error ? true : undefined}

@@ -18,6 +18,8 @@ minim-store = { path = "crates/store" }
 # Desktop
 tauri = { version = "2", features = [] }
 tauri-build = { version = "2", features = [] }
+# Boîte de dialogue système pour choisir un dossier (wizard, prompt 16).
+tauri-plugin-dialog = "2"
 
 # Modèle métier
 chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }

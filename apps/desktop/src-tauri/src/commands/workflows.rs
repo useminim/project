@@ -1,6 +1,7 @@
 //! Gestion des workflows (prompt 14). Chaque modification émet l'événement
 //! [`WORKFLOWS_CHANGED`], pour que tous les écrans se rafraîchissent.
 
+use minim_core::actions::{NamePreview, preview_file_name};
 use minim_core::{ValidationError, Workflow, WorkflowDraft, WorkflowId, WorkflowService};
 use tauri::{AppHandle, Emitter as _, Runtime, State};
 
@@ -55,6 +56,15 @@ pub async fn validate_workflow(
 ) -> Result<Vec<ValidationError>, CommandError> {
     let service = workflows.service()?;
     blocking(move || Ok(service.validate(&draft))).await
+}
+
+/// Nom que recevrait un fichier nommé `sample` avec le modèle de nom
+/// `template` (aperçu du wizard). La date du fichier est supposée être celle
+/// du jour.
+#[tauri::command]
+#[must_use]
+pub fn preview_name(template: &str, sample: &str) -> NamePreview {
+    preview_file_name(template, sample, chrono::Local::now().date_naive())
 }
 
 /// Crée un workflow, placé après les autres.
@@ -295,6 +305,23 @@ mod tests {
         let (_app, window) = app(Workflows(None));
         let unavailable = call(&window, "list_workflows", json!({})).unwrap_err();
         assert_eq!(unavailable["code"], "storage_unavailable");
+    }
+
+    #[test]
+    fn previews_a_file_name() {
+        let (_app, window) = app(service());
+
+        let preview = call(
+            &window,
+            "preview_name",
+            json!({ "template": "{date_in_name}_{original_name}", "sample": "Facture 2026-03-15.pdf" }),
+        )
+        .unwrap();
+
+        assert_eq!(
+            preview,
+            json!({ "kind": "name", "name": "2026-03-15_Facture 2026-03-15" })
+        );
     }
 
     #[test]
