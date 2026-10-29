@@ -799,3 +799,50 @@ p {
   color: var(--color-text);
   font-weight: 600;
 }
+
+/* Compte */
+
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 32rem;
+}
+
+.account__title {
+  font-size: var(--font-size-large);
+}
+
+.account__subtitle {
+  font-size: 1.05rem;
+}
+
+.account__panel,
+.account__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.account__modes,
+.account__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.account__modes {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.account__offline {
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.account__notice {
+  color: var(--color-success);
+}

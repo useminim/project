@@ -25,6 +25,11 @@ const COMMANDS: &[&str] = &[
     "reorder_workflows",
     "preview_workflow_on_file",
     "run_workflow_on_file",
+    "account_status",
+    "sign_in",
+    "sign_up",
+    "sign_out",
+    "request_password_reset",
 ];
 
 const WINDOWS_MANIFEST: &str = "windows-app-manifest.xml";

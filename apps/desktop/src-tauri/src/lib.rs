@@ -1,8 +1,10 @@
 //! Application desktop minim : mise en place du runtime Tauri.
 
+pub mod account;
 pub mod commands;
 pub mod diagnostics;
 pub mod error;
+pub mod keychain;
 pub mod logging;
 pub mod pdf;
 pub mod storage;
@@ -10,9 +12,10 @@ pub mod storage;
 use std::sync::Arc;
 
 use minim_core::ports::{SystemClock, UlidGenerator};
-use minim_core::{TrialService, WorkflowService};
+use minim_core::{AccountService, TrialService, WorkflowService};
 use tauri::Manager;
 
+use crate::commands::account::Account;
 use crate::commands::trials::Trials;
 use crate::commands::workflows::Workflows;
 
@@ -77,7 +80,7 @@ pub fn run() -> tauri::Result<()> {
                         workflows,
                         Arc::clone(&repositories.execution_logs),
                         converter,
-                        clock,
+                        clock.clone(),
                         ids,
                         Arc::new(|date: chrono::DateTime<chrono::Utc>| {
                             date.with_timezone(&chrono::Local).date_naive()
@@ -85,6 +88,13 @@ pub fn run() -> tauri::Result<()> {
                     )
                 },
             );
+            let accounts = account::provider();
+            tracing::info!(configured = accounts.is_some(), "comptes");
+            app.manage(Account(AccountService::new(
+                accounts,
+                Arc::new(account::KeychainSessionStore),
+                clock.clone(),
+            )));
             app.manage(Workflows(workflows));
             app.manage(Trials(trials));
             app.manage(storage);

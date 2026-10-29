@@ -8,6 +8,7 @@
 use std::fmt;
 use std::io;
 
+use minim_core::ports::AuthError;
 use minim_core::{TrialError, ValidationError, WorkflowServiceError};
 use serde::Serialize;
 
@@ -25,6 +26,22 @@ pub enum ErrorCode {
     Conflict,
     /// Le stockage local n'a pas pu être ouvert au démarrage.
     StorageUnavailable,
+    /// E-mail ou mot de passe incorrect.
+    InvalidCredentials,
+    /// L'adresse e-mail du compte n'a pas encore été confirmée.
+    EmailNotConfirmed,
+    /// Un compte existe déjà avec cette adresse.
+    EmailTaken,
+    /// Le mot de passe est trop faible.
+    WeakPassword,
+    /// Trop de tentatives : il faut patienter.
+    RateLimited,
+    /// Le serveur est injoignable (pas de réseau).
+    Offline,
+    /// La session a expiré : il faut se reconnecter.
+    SessionExpired,
+    /// Les comptes ne sont pas disponibles dans cette version.
+    AccountsUnavailable,
     /// Une lecture ou une écriture sur le disque a échoué.
     Io,
     /// Erreur inattendue ; le détail n'est que dans les logs.
@@ -40,6 +57,14 @@ impl ErrorCode {
             Self::NotFound => "errors.not_found",
             Self::Conflict => "errors.conflict",
             Self::StorageUnavailable => "errors.storage_unavailable",
+            Self::InvalidCredentials => "errors.invalid_credentials",
+            Self::EmailNotConfirmed => "errors.email_not_confirmed",
+            Self::EmailTaken => "errors.email_taken",
+            Self::WeakPassword => "errors.weak_password",
+            Self::RateLimited => "errors.rate_limited",
+            Self::Offline => "errors.offline",
+            Self::SessionExpired => "errors.session_expired",
+            Self::AccountsUnavailable => "errors.accounts_unavailable",
             Self::Io => "errors.io",
             Self::Internal => "errors.internal",
         }
@@ -168,6 +193,24 @@ impl From<TrialError> for CommandError {
             TrialError::Workflow(error) => error.into(),
             TrialError::File(error) => error.into(),
         }
+    }
+}
+
+impl From<AuthError> for CommandError {
+    /// Les erreurs de compte ne contiennent ni e-mail ni jeton.
+    fn from(error: AuthError) -> Self {
+        let code = match error {
+            AuthError::InvalidCredentials => ErrorCode::InvalidCredentials,
+            AuthError::EmailNotConfirmed => ErrorCode::EmailNotConfirmed,
+            AuthError::EmailTaken => ErrorCode::EmailTaken,
+            AuthError::WeakPassword => ErrorCode::WeakPassword,
+            AuthError::RateLimited => ErrorCode::RateLimited,
+            AuthError::Network => ErrorCode::Offline,
+            AuthError::SessionExpired => ErrorCode::SessionExpired,
+            AuthError::NotConfigured => ErrorCode::AccountsUnavailable,
+            AuthError::Server { .. } => return Self::internal(&error),
+        };
+        Self::new(code)
     }
 }
 

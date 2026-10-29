@@ -4,5 +4,13 @@
   "conflict": "Cet élément a été modifié entre-temps. Rechargez-le puis recommencez.",
   "storage_unavailable": "Le stockage local n'a pas pu être ouvert. Vos workflows sont indisponibles.",
   "io": "Un fichier n'a pas pu être lu ou écrit.",
+  "invalid_credentials": "Adresse e-mail ou mot de passe incorrect.",
+  "email_not_confirmed": "Confirmez d'abord votre adresse e-mail avec le lien reçu par e-mail.",
+  "email_taken": "Un compte existe déjà avec cette adresse e-mail.",
+  "weak_password": "Ce mot de passe est trop faible : choisissez-en un plus long.",
+  "rate_limited": "Trop de tentatives : patientez quelques minutes avant de réessayer.",
+  "offline": "Impossible de joindre le serveur : vérifiez votre connexion à internet.",
+  "session_expired": "Votre session a expiré : reconnectez-vous.",
+  "accounts_unavailable": "Les comptes ne sont pas disponibles dans cette version de minim.",
   "internal": "Une erreur inattendue est survenue."
 }

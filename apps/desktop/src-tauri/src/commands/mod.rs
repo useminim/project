@@ -5,6 +5,7 @@
 //! convertissent les erreurs en `CommandError`. Chaque commande doit être
 //! déclarée dans `build.rs` et autorisée dans `capabilities/default.json`.
 
+pub mod account;
 pub mod storage;
 #[cfg(test)]
 mod testing;
@@ -32,6 +33,11 @@ pub fn handler<R: Runtime>() -> impl Fn(Invoke<R>) -> bool + Send + Sync + 'stat
         workflows::reorder_workflows,
         trials::preview_workflow_on_file,
         trials::run_workflow_on_file,
+        account::account_status,
+        account::sign_in,
+        account::sign_up,
+        account::sign_out,
+        account::request_password_reset,
     ]
 }
 

@@ -1,7 +1,29 @@
 {
   "title": "Paramètres",
-  "empty": {
-    "title": "Aucun réglage disponible",
-    "description": "Les réglages de l'application apparaîtront ici."
+  "account": {
+    "title": "Compte",
+    "intro": "Un compte n'est pas nécessaire pour utiliser minim. Il servira à sauvegarder vos workflows et à les retrouver sur vos autres ordinateurs.",
+    "unavailable": "Les comptes ne sont pas encore disponibles dans cette version de minim. L'application fonctionne normalement sans compte.",
+    "signedIn": "Connecté avec {{email}}.",
+    "offline": "Hors ligne : vous restez connecté avec {{email}}. La connexion reprendra automatiquement.",
+    "signOut": "Se déconnecter",
+    "signIn": "Se connecter",
+    "signUp": "Créer un compte",
+    "modes": "Se connecter ou créer un compte",
+    "email": "Adresse e-mail",
+    "password": "Mot de passe",
+    "passwordHint": "Au moins 8 caractères.",
+    "passwordConfirm": "Confirmer le mot de passe",
+    "passwordMismatch": "Les deux mots de passe ne sont pas identiques.",
+    "passwordTooShort": "Le mot de passe doit faire au moins 8 caractères.",
+    "emailInvalid": "Saisissez une adresse e-mail valide.",
+    "forgot": "Mot de passe oublié ?",
+    "resetTitle": "Réinitialiser le mot de passe",
+    "resetIntro": "Saisissez l'adresse de votre compte : vous recevrez un lien pour choisir un nouveau mot de passe.",
+    "resetSend": "Envoyer le lien",
+    "resetSent": "Si un compte existe avec cette adresse, un e-mail vient d'être envoyé.",
+    "back": "Retour à la connexion",
+    "confirmationSent": "Compte créé. Ouvrez le lien envoyé à {{email}} pour confirmer votre adresse, puis connectez-vous.",
+    "signedOut": "Vous êtes déconnecté."
   }
 }
