@@ -17,9 +17,13 @@
     "lint:bindings": "node scripts/check-bindings.mjs",
     "lint:js": "biome check && pnpm -r --if-present typecheck",
     "lint:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
-    "format": "biome check --write && cargo fmt --all"
+    "format": "biome check --write && cargo fmt --all",
+    "backend:start": "supabase start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,supavisor",
+    "backend:stop": "supabase stop",
+    "backend:test": "node scripts/backend-test.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14"
+    "@biomejs/biome": "2.5.14",
+    "supabase": "2.122.0"
   }
 }
