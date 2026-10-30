@@ -23,6 +23,7 @@
     "allow-sign-in",
     "allow-sign-up",
     "allow-sign-out",
+    "allow-delete-account",
     "allow-request-password-reset"
   ]
 }
