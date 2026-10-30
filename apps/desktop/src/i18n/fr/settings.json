@@ -12,7 +12,7 @@
     "modes": "Se connecter ou créer un compte",
     "email": "Adresse e-mail",
     "password": "Mot de passe",
-    "passwordHint": "Au moins 8 caractères.",
+    "passwordHint": "Au moins 8 caractères, avec des lettres et des chiffres.",
     "passwordConfirm": "Confirmer le mot de passe",
     "passwordMismatch": "Les deux mots de passe ne sont pas identiques.",
     "passwordTooShort": "Le mot de passe doit faire au moins 8 caractères.",
@@ -24,6 +24,14 @@
     "resetSent": "Si un compte existe avec cette adresse, un e-mail vient d'être envoyé.",
     "back": "Retour à la connexion",
     "confirmationSent": "Compte créé. Ouvrez le lien envoyé à {{email}} pour confirmer votre adresse, puis connectez-vous.",
-    "signedOut": "Vous êtes déconnecté."
+    "signedOut": "Vous êtes déconnecté.",
+    "healthProfession": "J'exerce une profession de santé (médecin, paramédical, secrétariat médical…)",
+    "healthProfessionHint": "La sauvegarde en ligne de vos workflows n'est pas encore disponible pour les professions de santé : vos données restent sur cet ordinateur.",
+    "deleteTitle": "Supprimer mon compte",
+    "deleteIntro": "Votre compte et ses données en ligne seront supprimés définitivement. Les workflows enregistrés sur cet ordinateur ne sont pas touchés.",
+    "delete": "Supprimer mon compte",
+    "deleteConfirmTitle": "Supprimer définitivement votre compte ?",
+    "deleteConfirmDescription": "Cette action ne peut pas être annulée. Les workflows de cet ordinateur restent disponibles sans compte.",
+    "deleteConfirm": "Supprimer"
   }
 }
