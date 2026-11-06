@@ -33,6 +33,9 @@ fn live() -> Option<Live> {
         eprintln!("MINIM_SUPABASE_TEST_URL absent : tests contre Supabase ignorés");
         return None;
     };
+    // Le client de test est construit hors de minim-sync : il faut installer
+    // le fournisseur cryptographique (feature `rustls-no-provider`).
+    let _ = rustls::crypto::ring::default_provider().install_default();
     Some(Live {
         url,
         anon: var("MINIM_SUPABASE_TEST_ANON_KEY").expect("MINIM_SUPABASE_TEST_ANON_KEY"),
