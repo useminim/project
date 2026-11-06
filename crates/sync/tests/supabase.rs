@@ -105,14 +105,14 @@ async fn signs_up_with_or_without_email_confirmation() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/auth/v1/signup"))
-        .and(body_json(json!({ "email": "confirm@example.com", "password": "pw" })))
+        .and(body_json(json!({ "email": "confirm@example.com", "password": "pw", "data": { "health_profession": true } })))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "id": "u2", "email": "confirm@example.com", "confirmation_sent_at": "2026-10-29T10:00:00Z" })))
         .mount(&server)
         .await;
     Mock::given(method("POST"))
         .and(path("/auth/v1/signup"))
         .and(body_json(
-            json!({ "email": "alice@example.com", "password": "pw" }),
+            json!({ "email": "alice@example.com", "password": "pw", "data": { "health_profession": false } }),
         ))
         .respond_with(ResponseTemplate::new(200).set_body_json(session_body(1)))
         .mount(&server)
@@ -120,7 +120,7 @@ async fn signs_up_with_or_without_email_confirmation() {
     Mock::given(method("POST"))
         .and(path("/auth/v1/signup"))
         .and(body_json(
-            json!({ "email": "taken@example.com", "password": "pw" }),
+            json!({ "email": "taken@example.com", "password": "pw", "data": { "health_profession": false } }),
         ))
         .respond_with(error(422, "user_already_exists"))
         .mount(&server)
@@ -128,15 +128,19 @@ async fn signs_up_with_or_without_email_confirmation() {
     let auth = auth(&server);
 
     assert_eq!(
-        auth.sign_up("confirm@example.com", "pw").await.unwrap(),
+        auth.sign_up("confirm@example.com", "pw", true)
+            .await
+            .unwrap(),
         SignUpOutcome::ConfirmationSent
     );
     assert!(matches!(
-        auth.sign_up("alice@example.com", "pw").await.unwrap(),
+        auth.sign_up("alice@example.com", "pw", false)
+            .await
+            .unwrap(),
         SignUpOutcome::SignedIn(_)
     ));
     assert!(matches!(
-        auth.sign_up("taken@example.com", "pw").await,
+        auth.sign_up("taken@example.com", "pw", false).await,
         Err(AuthError::EmailTaken)
     ));
 }
@@ -196,6 +200,21 @@ async fn signs_out_and_requests_a_password_reset() {
     auth.request_password_reset("alice@example.com")
         .await
         .unwrap();
+}
+
+#[tokio::test]
+async fn deletes_the_account_with_the_user_token() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/rest/v1/rpc/delete_my_account"))
+        .and(header("apikey", ANON))
+        .and(header("authorization", "Bearer access-1"))
+        .respond_with(ResponseTemplate::new(204))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    auth(&server).delete_account("access-1").await.unwrap();
 }
 
 #[tokio::test]

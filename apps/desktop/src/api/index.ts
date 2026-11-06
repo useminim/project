@@ -1,5 +1,6 @@
 export {
   ACCOUNT_CHANGED,
+  deleteAccount,
   getAccountStatus,
   onAccountChanged,
   requestPasswordReset,

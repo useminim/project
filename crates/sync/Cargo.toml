@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 chrono.workspace = true
 minim-core.workspace = true
+minim-shared.workspace = true
 reqwest.workspace = true
 rustls.workspace = true
 serde.workspace = true

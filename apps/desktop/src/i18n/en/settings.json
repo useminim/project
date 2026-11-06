@@ -12,7 +12,7 @@
     "modes": "Sign in or create an account",
     "email": "Email address",
     "password": "Password",
-    "passwordHint": "At least 8 characters.",
+    "passwordHint": "At least 8 characters, with letters and digits.",
     "passwordConfirm": "Confirm password",
     "passwordMismatch": "The two passwords do not match.",
     "passwordTooShort": "The password must be at least 8 characters long.",
@@ -24,6 +24,14 @@
     "resetSent": "If an account exists with this address, an email has just been sent.",
     "back": "Back to sign in",
     "confirmationSent": "Account created. Open the link sent to {{email}} to confirm your address, then sign in.",
-    "signedOut": "You are signed out."
+    "signedOut": "You are signed out.",
+    "healthProfession": "I work in healthcare (doctor, allied health, medical secretary…)",
+    "healthProfessionHint": "Online backup of workflows is not available for healthcare professionals yet: your data stays on this computer.",
+    "deleteTitle": "Delete my account",
+    "deleteIntro": "Your account and its online data will be deleted for good. Workflows saved on this computer are not affected.",
+    "delete": "Delete my account",
+    "deleteConfirmTitle": "Delete your account for good?",
+    "deleteConfirmDescription": "This cannot be undone. The workflows on this computer remain available without an account.",
+    "deleteConfirm": "Delete"
   }
 }

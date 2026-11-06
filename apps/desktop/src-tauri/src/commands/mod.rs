@@ -37,6 +37,7 @@ pub fn handler<R: Runtime>() -> impl Fn(Invoke<R>) -> bool + Send + Sync + 'stat
         account::sign_in,
         account::sign_up,
         account::sign_out,
+        account::delete_account,
         account::request_password_reset,
     ]
 }
