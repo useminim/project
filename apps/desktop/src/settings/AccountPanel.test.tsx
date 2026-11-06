@@ -115,8 +115,51 @@ describe("AccountPanel", () => {
     );
     expect(calls).toContainEqual({
       command: "sign_up",
-      args: { email: "bob@example.com", password: "longmotdepasse" },
+      args: { email: "bob@example.com", password: "longmotdepasse", healthProfession: false },
     });
+  });
+
+  it("declares a health profession at sign-up", async () => {
+    const calls = backend({ state: "signed_out" }, (command) =>
+      command === "sign_up" ? "confirmation_sent" : undefined,
+    );
+    const user = userEvent.setup();
+    render(<AccountPanel />);
+
+    await user.click(await screen.findByRole("button", { name: "Créer un compte" }));
+    await user.type(screen.getByLabelText("Adresse e-mail"), "dr@example.com");
+    await user.type(screen.getByLabelText("Mot de passe"), "longmotdepasse1");
+    await user.type(screen.getByLabelText("Confirmer le mot de passe"), "longmotdepasse1");
+    const health = screen.getByRole("checkbox", { name: /profession de santé/ });
+    expect(health.getAttribute("aria-describedby")).toBe("health-profession-hint");
+    await user.click(health);
+    await user.click(
+      screen.getAllByRole("button", { name: "Créer un compte" }).at(-1) as HTMLElement,
+    );
+
+    await screen.findByText(/Ouvrez le lien/);
+    expect(calls).toContainEqual({
+      command: "sign_up",
+      args: { email: "dr@example.com", password: "longmotdepasse1", healthProfession: true },
+    });
+  });
+
+  it("deletes the account only after confirmation", async () => {
+    const calls = backend({ state: "signed_in", email: "alice@example.com" }, (command) =>
+      command === "delete_account" ? { state: "signed_out" } : undefined,
+    );
+    const user = userEvent.setup();
+    render(<AccountPanel />);
+
+    await user.click(await screen.findByRole("button", { name: "Supprimer mon compte" }));
+    await user.click(screen.getByRole("button", { name: "Annuler" }));
+    expect(calls.some((call) => call.command === "delete_account")).toBe(false);
+
+    await user.click(screen.getByRole("button", { name: "Supprimer mon compte" }));
+    await user.click(screen.getByRole("button", { name: "Supprimer" }));
+
+    expect(await screen.findByLabelText("Mot de passe")).toBeTruthy();
+    expect(calls.some((call) => call.command === "delete_account")).toBe(true);
   });
 
   it("sends a password reset link", async () => {

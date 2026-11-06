@@ -79,11 +79,12 @@ pub enum AuthError {
 
 /// Authentification auprès du backend.
 pub trait AuthProvider: Send + Sync {
-    /// Crée un compte.
+    /// Crée un compte ; `health_profession` est enregistré dans le profil.
     fn sign_up<'a>(
         &'a self,
         email: &'a str,
         password: &'a str,
+        health_profession: bool,
     ) -> BoxFuture<'a, Result<SignUpOutcome, AuthError>>;
 
     /// Ouvre une session.
@@ -98,6 +99,10 @@ pub trait AuthProvider: Send + Sync {
 
     /// Ferme la session côté backend.
     fn sign_out<'a>(&'a self, access_token: &'a str) -> BoxFuture<'a, Result<(), AuthError>>;
+
+    /// Supprime définitivement le compte et ses données (droit à
+    /// l'effacement).
+    fn delete_account<'a>(&'a self, access_token: &'a str) -> BoxFuture<'a, Result<(), AuthError>>;
 
     /// Envoie un e-mail de réinitialisation du mot de passe (sans révéler si
     /// le compte existe).

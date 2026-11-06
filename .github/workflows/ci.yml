@@ -73,3 +73,31 @@ jobs:
           tool: cargo-deny
 
       - run: cargo deny --locked check
+
+  backend:
+    name: Backend (Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+
+      # La CLI Supabase est une dépendance figée du dépôt.
+      - run: pnpm install --frozen-lockfile
+
+      # Base, authentification, API REST et e-mails de test seulement.
+      - run: pnpm backend:start
+
+      # Linter, tests de sécurité pgTAP, tests d'attaque contre l'API.
+      - run: pnpm backend:test
+

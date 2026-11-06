@@ -1,9 +1,7 @@
-//! Types partagés entre l'application desktop et l'API (DTO de synchronisation, droits liés à l'offre).
+//! Types échangés entre l'application et le backend (Supabase, D-37) : leur
+//! forme JSON doit correspondre à ce qu'attendent les migrations de
+//! `supabase/`.
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn crate_is_wired_into_the_workspace() {
-        assert_eq!(env!("CARGO_PKG_NAME"), "minim-shared");
-    }
-}
+pub mod account;
+
+pub use account::SignUpMetadata;

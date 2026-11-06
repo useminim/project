@@ -19,9 +19,18 @@ export function signIn(email: string, password: string): Promise<AccountStatus> 
   return invokeCommand<AccountStatus>("sign_in", { email, password });
 }
 
-/** Crée un compte. */
-export function signUp(email: string, password: string): Promise<SignUpResult> {
-  return invokeCommand<SignUpResult>("sign_up", { email, password });
+/** Crée un compte ; `healthProfession` désactive la synchronisation pour ce compte. */
+export function signUp(
+  email: string,
+  password: string,
+  healthProfession: boolean,
+): Promise<SignUpResult> {
+  return invokeCommand<SignUpResult>("sign_up", { email, password, healthProfession });
+}
+
+/** Supprime définitivement le compte et ses données en ligne. */
+export function deleteAccount(): Promise<AccountStatus> {
+  return invokeCommand<AccountStatus>("delete_account");
 }
 
 /** Ferme la session et efface les jetons. */

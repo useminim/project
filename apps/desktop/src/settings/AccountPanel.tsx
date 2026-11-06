@@ -6,6 +6,7 @@ import type { ParseKeys } from "i18next";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  deleteAccount,
   getAccountStatus,
   onAccountChanged,
   requestPasswordReset,
@@ -16,6 +17,7 @@ import {
 } from "../api";
 import type { AccountStatus } from "../bindings/AccountStatus";
 import { Button } from "../components/Button";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Spinner } from "../components/Spinner";
 import { TextField } from "../components/TextField";
 
@@ -70,6 +72,17 @@ function SignedIn({
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const remove = () => {
+    setBusy(true);
+    setError(null);
+    deleteAccount()
+      .then(onSignedOut)
+      .catch((reason: unknown) => setError(t(toCommandError(reason).message_key as ParseKeys)))
+      .finally(() => setBusy(false));
+  };
 
   return (
     <div className="account__panel">
@@ -94,6 +107,29 @@ function SignedIn({
           {t("settings.account.signOut")}
         </Button>
       </div>
+      <div className="account__danger">
+        <h3 className="account__subtitle">{t("settings.account.deleteTitle")}</h3>
+        <p className="section__help">{t("settings.account.deleteIntro")}</p>
+        {error && (
+          <p className="field__error" role="alert">
+            {error}
+          </p>
+        )}
+        <div>
+          <Button variant="danger" disabled={busy} onClick={() => setConfirmDelete(true)}>
+            {t("settings.account.delete")}
+          </Button>
+        </div>
+      </div>
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={t("settings.account.deleteConfirmTitle")}
+        description={t("settings.account.deleteConfirmDescription")}
+        confirmLabel={t("settings.account.deleteConfirm")}
+        destructive
+        onConfirm={remove}
+      />
     </div>
   );
 }
@@ -104,6 +140,7 @@ function SignedOut({ onSignedIn }: { onSignedIn: (status: AccountStatus) => void
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [healthProfession, setHealthProfession] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -145,7 +182,7 @@ function SignedOut({ onSignedIn }: { onSignedIn: (status: AccountStatus) => void
       if (mode === "signIn") {
         onSignedIn(await signIn(email, password));
       } else if (mode === "signUp") {
-        const result = await signUp(email, password);
+        const result = await signUp(email, password, healthProfession);
         if (result === "signed_in") {
           onSignedIn(await getAccountStatus());
         } else {
@@ -217,6 +254,22 @@ function SignedOut({ onSignedIn }: { onSignedIn: (status: AccountStatus) => void
             onChange={(event) => setConfirm(event.target.value)}
             required
           />
+        )}
+        {mode === "signUp" && (
+          <div className="field">
+            <label className="choice__option">
+              <input
+                type="checkbox"
+                checked={healthProfession}
+                onChange={(event) => setHealthProfession(event.target.checked)}
+                aria-describedby="health-profession-hint"
+              />{" "}
+              {t("settings.account.healthProfession")}
+            </label>
+            <p id="health-profession-hint" className="field__hint">
+              {t("settings.account.healthProfessionHint")}
+            </p>
+          </div>
         )}
         {error && (
           <p className="field__error" role="alert">

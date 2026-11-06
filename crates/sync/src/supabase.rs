@@ -9,6 +9,7 @@ use std::time::Duration;
 use chrono::Utc;
 use minim_core::Redacted;
 use minim_core::ports::{AuthError, AuthProvider, AuthUser, BoxFuture, Session, SignUpOutcome};
+use minim_shared::SignUpMetadata;
 use reqwest::{Client, Response, StatusCode};
 use serde::Deserialize;
 use serde_json::json;
@@ -57,13 +58,25 @@ impl SupabaseAuth {
         self
     }
 
+    /// Requête `POST` vers l'API d'authentification (`/auth/v1/…`).
     async fn post(
         &self,
         path: &str,
         body: serde_json::Value,
         bearer: Option<&str>,
     ) -> Result<Response, AuthError> {
-        let url = format!("{}/auth/v1/{path}", self.config.url);
+        self.post_to(&format!("auth/v1/{path}"), body, bearer).await
+    }
+
+    /// Requête `POST` vers `path` du projet, avec la clé publique et, si
+    /// donné, le jeton de l'utilisateur.
+    async fn post_to(
+        &self,
+        path: &str,
+        body: serde_json::Value,
+        bearer: Option<&str>,
+    ) -> Result<Response, AuthError> {
+        let url = format!("{}/{path}", self.config.url);
         send_with_retry(
             || {
                 let request = self
@@ -180,12 +193,14 @@ impl AuthProvider for SupabaseAuth {
         &'a self,
         email: &'a str,
         password: &'a str,
+        health_profession: bool,
     ) -> BoxFuture<'a, Result<SignUpOutcome, AuthError>> {
         Box::pin(async move {
+            let data = SignUpMetadata { health_profession };
             let response = self
                 .post(
                     "signup",
-                    json!({ "email": email, "password": password }),
+                    json!({ "email": email, "password": password, "data": data }),
                     None,
                 )
                 .await?;
@@ -246,6 +261,24 @@ impl AuthProvider for SupabaseAuth {
                 .await?;
             // Une session déjà expirée côté serveur est déjà fermée.
             if response.status().is_success() || response.status() == StatusCode::UNAUTHORIZED {
+                Ok(())
+            } else {
+                Err(error_of(response).await)
+            }
+        })
+    }
+
+    fn delete_account<'a>(&'a self, access_token: &'a str) -> BoxFuture<'a, Result<(), AuthError>> {
+        Box::pin(async move {
+            // Fonction `delete_my_account` de la migration `profiles`.
+            let response = self
+                .post_to(
+                    "rest/v1/rpc/delete_my_account",
+                    json!({}),
+                    Some(access_token),
+                )
+                .await?;
+            if response.status().is_success() {
                 Ok(())
             } else {
                 Err(error_of(response).await)
