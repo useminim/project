@@ -1,4 +1,4 @@
-//! Essai d'un workflow sur un fichier choisi (prompt 17) : simulation, puis
+//! Essai d'un workflow sur un fichier choisi : simulation, puis
 //! exécution réelle inscrite au journal.
 
 use std::path::PathBuf;

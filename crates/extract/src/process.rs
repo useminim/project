@@ -1,4 +1,4 @@
-//! Processus PDFium séparé (prompt 13a, D-36).
+//! Processus PDFium séparé (D-36).
 //!
 //! PDFium est du code C++ : un PDF malformé ou malveillant peut le faire
 //! planter, boucler ou consommer toute la mémoire. Les documents sont donc
