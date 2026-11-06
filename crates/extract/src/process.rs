@@ -265,7 +265,6 @@ impl PdfWorker {
             return Err(ReadError::Corrupted.into());
         }
         let pid = Pid::from_u32(running.child.id());
-        let system = system.get_or_insert_with(System::new);
         let mut deadline = Instant::now() + limits.timeout;
         let outcome = loop {
             let now = Instant::now();
@@ -305,8 +304,15 @@ impl PdfWorker {
     }
 }
 
-/// Mémoire utilisée par le processus `pid`, en octets (0 si inconnue).
-fn memory(system: &mut System, pid: Pid) -> u64 {
+/// Mémoire utilisée par le processus `pid`, en octets (0 si inconnue, par
+/// exemple si `sysinfo` ne peut pas lire les processus sur ce système).
+fn memory(system: &mut Option<System>, pid: Pid) -> u64 {
+    if system.is_none() {
+        *system = System::new().ok();
+    }
+    let Some(system) = system else {
+        return 0;
+    };
     system.refresh_processes_specifics(
         ProcessesToUpdate::Some(&[pid]),
         true,
