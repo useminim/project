@@ -13,7 +13,9 @@
 //!   [`ReadError::Timeout`] ;
 //! - **mémoire** : au-delà de [`PdfLimits::max_memory`], mesurée toutes les
 //!   [`POLL`], le processus est tué et la demande échoue avec
-//!   [`ReadError::TooLarge`].
+//!   [`ReadError::TooLarge`]. Si `sysinfo` ne peut pas lire les processus
+//!   sur ce système, seule la limite de délai s'applique, et un
+//!   avertissement est journalisé une fois.
 //!
 //! Un processus tué est relancé à la demande suivante. Le processus n'écrit
 //! rien sur le disque et ne journalise rien ; sa sortie d'erreur est ignorée.
@@ -23,7 +25,7 @@ use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex, Once, PoisonError};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -265,7 +267,6 @@ impl PdfWorker {
             return Err(ReadError::Corrupted.into());
         }
         let pid = Pid::from_u32(running.child.id());
-        let system = system.get_or_insert_with(System::new);
         let mut deadline = Instant::now() + limits.timeout;
         let outcome = loop {
             let now = Instant::now();
@@ -305,8 +306,24 @@ impl PdfWorker {
     }
 }
 
-/// Mémoire utilisée par le processus `pid`, en octets (0 si inconnue).
-fn memory(system: &mut System, pid: Pid) -> u64 {
+/// Mémoire utilisée par le processus `pid`, en octets (0 si inconnue, par
+/// exemple si `sysinfo` ne peut pas lire les processus sur ce système).
+fn memory(system: &mut Option<System>, pid: Pid) -> u64 {
+    static UNAVAILABLE: Once = Once::new();
+    if system.is_none() {
+        match System::new() {
+            Ok(created) => *system = Some(created),
+            Err(error) => UNAVAILABLE.call_once(|| {
+                tracing::warn!(
+                    %error,
+                    "mémoire du processus PDFium non mesurable, limite de mémoire désactivée"
+                );
+            }),
+        }
+    }
+    let Some(system) = system else {
+        return 0;
+    };
     system.refresh_processes_specifics(
         ProcessesToUpdate::Some(&[pid]),
         true,
