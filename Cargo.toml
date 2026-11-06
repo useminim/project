@@ -19,7 +19,7 @@ minim-sync = { path = "crates/sync" }
 # Desktop
 tauri = { version = "2", features = [] }
 tauri-build = { version = "2", features = [] }
-# Boîte de dialogue système pour choisir un dossier (wizard, prompt 16).
+# Boîte de dialogue système pour choisir un dossier (wizard).
 tauri-plugin-dialog = "2"
 
 # Modèle métier
@@ -43,7 +43,7 @@ zbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust"] 
 # Lecture des PDF (D-34) : les binaires PDFium sont fournis par
 # scripts/fetch-pdfium.mjs.
 pdfium-render = { version = "0.9", default-features = false, features = ["pdfium_latest", "thread_safe", "image_latest"] }
-# Mémoire du processus PDFium, surveillée par l'application (prompt 13a).
+# Mémoire du processus PDFium, surveillée par l'application (D-36).
 sysinfo = { version = "0.40", default-features = false, features = ["system"] }
 # Encodage et décodage PNG / JPEG (conversions).
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }

@@ -1,4 +1,4 @@
-//! Gestion des workflows (prompt 14). Chaque modification émet l'événement
+//! Gestion des workflows. Chaque modification émet l'événement
 //! [`WORKFLOWS_CHANGED`], pour que tous les écrans se rafraîchissent.
 
 use minim_core::actions::{NamePreview, preview_file_name};
