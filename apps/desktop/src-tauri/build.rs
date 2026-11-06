@@ -29,6 +29,7 @@ const COMMANDS: &[&str] = &[
     "sign_in",
     "sign_up",
     "sign_out",
+    "delete_account",
     "request_password_reset",
 ];
 

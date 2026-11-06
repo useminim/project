@@ -181,20 +181,44 @@ impl AccountService {
         Ok(status)
     }
 
-    /// Crée un compte.
+    /// Crée un compte ; `health_profession` désactive la synchronisation
+    /// pour ce compte tant qu'il n'y a pas d'hébergement HDS (D-37).
     ///
     /// # Erreurs
     ///
     /// Renvoie l'erreur du backend (adresse déjà utilisée, mot de passe trop
     /// faible, réseau…).
-    pub async fn sign_up(&self, email: &str, password: &str) -> Result<SignUpResult, AuthError> {
-        match self.provider()?.sign_up(email.trim(), password).await? {
+    pub async fn sign_up(
+        &self,
+        email: &str,
+        password: &str,
+        health_profession: bool,
+    ) -> Result<SignUpResult, AuthError> {
+        match self
+            .provider()?
+            .sign_up(email.trim(), password, health_profession)
+            .await?
+        {
             SignUpOutcome::SignedIn(session) => {
                 self.remember(Some(session));
                 Ok(SignUpResult::SignedIn)
             }
             SignUpOutcome::ConfirmationSent => Ok(SignUpResult::ConfirmationSent),
         }
+    }
+
+    /// Supprime définitivement le compte et ses données côté serveur, puis la
+    /// session sur la machine. Les workflows locaux ne sont pas touchés.
+    ///
+    /// # Erreurs
+    ///
+    /// [`AuthError::SessionExpired`] sans session ; l'erreur du backend sinon
+    /// (réseau…). Le compte n'est alors pas supprimé.
+    pub async fn delete_account(&self) -> Result<AccountStatus, AuthError> {
+        let token = self.access_token().await?;
+        self.provider()?.delete_account(&token).await?;
+        self.remember(None);
+        Ok(AccountStatus::SignedOut)
     }
 
     /// Ferme la session : côté backend si possible, et toujours sur la
@@ -242,6 +266,7 @@ mod tests {
         offline: Mutex<bool>,
         revoked: Mutex<bool>,
         signed_out: AtomicUsize,
+        deleted: Mutex<bool>,
         now: Mutex<Option<DateTime<Utc>>>,
     }
 
@@ -265,6 +290,7 @@ mod tests {
             &'a self,
             email: &'a str,
             _: &'a str,
+            _: bool,
         ) -> BoxFuture<'a, Result<SignUpOutcome, AuthError>> {
             Box::pin(async move {
                 match email {
@@ -313,6 +339,17 @@ mod tests {
                 } else {
                     Ok(())
                 }
+            })
+        }
+
+        fn delete_account<'a>(&'a self, token: &'a str) -> BoxFuture<'a, Result<(), AuthError>> {
+            Box::pin(async move {
+                if *self.offline.lock().unwrap() {
+                    return Err(AuthError::Network);
+                }
+                assert!(token.starts_with("access-"));
+                *self.deleted.lock().unwrap() = true;
+                Ok(())
             })
         }
 
@@ -497,19 +534,52 @@ mod tests {
         let Fixture { service, .. } = fixture(MemoryStore::default());
 
         assert_eq!(
-            run(service.sign_up("confirm@example.com", "pw")).unwrap(),
+            run(service.sign_up("confirm@example.com", "pw", false)).unwrap(),
             SignUpResult::ConfirmationSent
         );
         assert_eq!(run(service.status()), AccountStatus::SignedOut);
         assert!(matches!(
-            run(service.sign_up("taken@example.com", "pw")),
+            run(service.sign_up("taken@example.com", "pw", false)),
             Err(AuthError::EmailTaken)
         ));
         assert_eq!(
-            run(service.sign_up("bob@example.com", "pw")).unwrap(),
+            run(service.sign_up("bob@example.com", "pw", false)).unwrap(),
             SignUpResult::SignedIn
         );
         assert_eq!(run(service.status()), signed_in());
+    }
+
+    #[test]
+    fn deletes_the_account_then_forgets_the_session() {
+        let Fixture {
+            service,
+            auth,
+            store,
+            ..
+        } = fixture(MemoryStore::default());
+        assert!(matches!(
+            run(service.delete_account()),
+            Err(AuthError::SessionExpired)
+        ));
+        run(service.sign_in("alice@example.com", "correct horse")).unwrap();
+
+        *auth.offline.lock().unwrap() = true;
+        assert!(matches!(
+            run(service.delete_account()),
+            Err(AuthError::Network)
+        ));
+        assert!(
+            store.session.lock().unwrap().is_some(),
+            "rien n'est supprimé sans le serveur"
+        );
+
+        *auth.offline.lock().unwrap() = false;
+        assert_eq!(
+            run(service.delete_account()).unwrap(),
+            AccountStatus::SignedOut
+        );
+        assert!(*auth.deleted.lock().unwrap());
+        assert!(store.session.lock().unwrap().is_none());
     }
 
     #[test]

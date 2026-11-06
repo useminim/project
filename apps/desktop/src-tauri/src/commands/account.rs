@@ -47,8 +47,12 @@ pub async fn sign_up<R: Runtime>(
     account: State<'_, Account>,
     email: String,
     password: String,
+    health_profession: bool,
 ) -> Result<SignUpResult, CommandError> {
-    let result = account.0.sign_up(&email, &password).await?;
+    let result = account
+        .0
+        .sign_up(&email, &password, health_profession)
+        .await?;
     if result == SignUpResult::SignedIn {
         changed(&app);
     }
@@ -62,6 +66,17 @@ pub async fn sign_out<R: Runtime>(
     account: State<'_, Account>,
 ) -> Result<AccountStatus, CommandError> {
     let status = account.0.sign_out().await;
+    changed(&app);
+    Ok(status)
+}
+
+/// Supprime définitivement le compte et ses données côté serveur.
+#[tauri::command]
+pub async fn delete_account<R: Runtime>(
+    app: AppHandle<R>,
+    account: State<'_, Account>,
+) -> Result<AccountStatus, CommandError> {
+    let status = account.0.delete_account().await?;
     changed(&app);
     Ok(status)
 }
@@ -98,6 +113,7 @@ mod tests {
             &'a self,
             _: &'a str,
             _: &'a str,
+            _: bool,
         ) -> BoxFuture<'a, Result<SignUpOutcome, AuthError>> {
             Box::pin(async { Ok(SignUpOutcome::ConfirmationSent) })
         }
@@ -125,6 +141,9 @@ mod tests {
             Box::pin(async { Err(AuthError::Network) })
         }
         fn sign_out<'a>(&'a self, _: &'a str) -> BoxFuture<'a, Result<(), AuthError>> {
+            Box::pin(async { Ok(()) })
+        }
+        fn delete_account<'a>(&'a self, _: &'a str) -> BoxFuture<'a, Result<(), AuthError>> {
             Box::pin(async { Ok(()) })
         }
         fn request_password_reset<'a>(
@@ -178,8 +197,10 @@ mod tests {
             call(&window, "sign_in", credentials("correct horse")).unwrap(),
             json!({ "state": "signed_in", "email": "alice@example.com" })
         );
+        let mut sign_up = credentials("pw");
+        sign_up["healthProfession"] = json!(true);
         assert_eq!(
-            call(&window, "sign_up", credentials("pw")).unwrap(),
+            call(&window, "sign_up", sign_up).unwrap(),
             json!("confirmation_sent")
         );
         assert_eq!(
@@ -190,6 +211,10 @@ mod tests {
             )
             .unwrap_err()["code"],
             "rate_limited"
+        );
+        assert_eq!(
+            call(&window, "delete_account", json!({})).unwrap(),
+            json!({ "state": "signed_out" })
         );
         assert_eq!(
             call(&window, "sign_out", json!({})).unwrap(),
