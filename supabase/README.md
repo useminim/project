@@ -49,7 +49,7 @@ Deux projets Supabase distincts, région **Europe (Paris, `eu-west-3`)**, dans u
 
 3. Authentification (Dashboard → Authentication) : confirmation de l'e-mail activée, longueur minimale du mot de passe 8 avec lettres et chiffres, inscription anonyme désactivée, protection contre les mots de passe divulgués activée (offre Pro). Adresses de redirection : celles de la page de confirmation de minim, quand elle existera.
 4. **E-mails par Brevo** (France, serveurs dans l'UE) : créer un compte Brevo, authentifier le domaine d'envoi (SPF, DKIM, DMARC), créer une clé SMTP, puis dans Dashboard → Authentication → SMTP Settings : hôte `smtp-relay.brevo.com`, port `587`, identifiant et clé SMTP de Brevo, expéditeur `minim <no-reply@…>`. Le serveur d'e-mails intégré de Supabase n'est fait que pour les tests.
-5. Lancer les **Security Advisors** du projet (Dashboard → Advisors) après chaque déploiement : aucune alerte de sécurité ne doit rester.
+5. Lancer les **Security Advisors** du projet (Dashboard → Advisors) après chaque déploiement : aucune alerte de sécurité ne doit rester, sauf celle-ci, voulue : `delete_my_account()` est exécutable par `authenticated` (chaque utilisateur doit pouvoir supprimer son propre compte, et seulement le sien). Si l'option « Enable automatic RLS » a été cochée à la création du projet, la migration `lock_rls_auto_enable` retire l'accès par l'API à la fonction qu'elle ajoute.
 6. Donner à l'équipe l'adresse du projet et sa clé publique ; elles sont compilées dans les versions publiées (`MINIM_SUPABASE_URL`, `MINIM_SUPABASE_ANON_KEY`).
 
 Le déploiement est manuel pour l'instant (`supabase db push` vers la préproduction après chaque merge qui touche `supabase/migrations`) ; son automatisation par la CI viendra ensuite.
