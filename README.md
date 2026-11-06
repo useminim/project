@@ -27,7 +27,7 @@ Chiffrement de la base locale : OpenSSL est compilé depuis les sources, ce qui 
 
 Backend (Supabase) : voir [`supabase/README.md`](supabase/README.md) (`pnpm backend:start`, `pnpm backend:test`, Docker requis).
 
-Comptes (facultatifs, Supabase en région UE) : l'application lit l'adresse du projet et sa clé publique dans `MINIM_SUPABASE_URL` et `MINIM_SUPABASE_ANON_KEY`, au lancement en développement ou à la compilation pour une version publiée. Sans ces variables, les comptes sont indisponibles et minim fonctionne normalement en local. Les jetons de session sont gardés dans le trousseau du système.
+Comptes (facultatifs, Supabase en région UE) : en développement, `pnpm dev` se branche tout seul sur le projet de **préproduction** ; il n'y a rien à configurer. Pour utiliser un autre projet (par exemple le Supabase local de `pnpm backend:start`), définir `MINIM_SUPABASE_URL` et `MINIM_SUPABASE_ANON_KEY` au lancement ; `MINIM_SUPABASE_URL=` (vide) désactive les comptes. Les versions publiées n'ont pas de projet par défaut : ces variables sont lues à leur compilation. Sans configuration, les comptes sont indisponibles et minim fonctionne normalement en local. Les jetons de session sont gardés dans le trousseau du système ; sous WSL, qui n'en a pas, la session ne dure que le temps du lancement.
 
 Lecture des PDF : la bibliothèque PDFium (version figée, empreinte SHA-256 vérifiée) est téléchargée automatiquement dans `apps/desktop/src-tauri/resources/pdfium/` par `pnpm dev`, `pnpm build`, `pnpm lint` et `pnpm test` (script `pnpm fetch:pdfium`). Une connexion est donc nécessaire la première fois.
 
