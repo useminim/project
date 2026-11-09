@@ -23,7 +23,7 @@
     "backend:test": "node scripts/backend-test.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.5",
     "supabase": "2.122.0"
   }
 }
