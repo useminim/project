@@ -7,7 +7,7 @@
 //! `Box::pin(async move { … })`.
 //!
 //! La forme des changements est provisoire : elle sera revue avec le
-//! chiffrement des métadonnées (prompt 41) et la synchronisation (prompt 42).
+//! chiffrement des métadonnées et la synchronisation.
 
 use std::future::Future;
 use std::pin::Pin;

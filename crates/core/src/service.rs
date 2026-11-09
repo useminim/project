@@ -14,8 +14,8 @@ use crate::ports::{Clock, IdGenerator, PRIORITY_STEP, StoreError, WorkflowReposi
 use crate::trigger::Trigger;
 use crate::workflow::{CURRENT_SCHEMA_VERSION, Owner, ValidationError, Workflow};
 
-/// Propriétaire des workflows créés tant que les comptes n'existent pas
-/// (prompt 19) : un utilisateur local unique.
+/// Propriétaire des workflows créés tant que les workflows ne sont pas
+/// rattachés à un compte : un utilisateur local unique.
 pub const LOCAL_OWNER: Owner = Owner::User(UserId::from_ulid(Ulid::nil()));
 
 /// Ce que l'utilisateur saisit dans le wizard. Identifiant, version, priorité,

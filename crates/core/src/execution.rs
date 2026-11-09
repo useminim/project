@@ -60,7 +60,7 @@ pub struct ActionRecord {
     #[cfg_attr(feature = "ts", ts(type = "number"))]
     pub duration_ms: u64,
     /// Opérations faites sur le disque, dans l'ordre, de quoi les annuler
-    /// (prompt 24) : une seule pour un renommage, un déplacement ou une copie,
+    /// plus tard : une seule pour un renommage, un déplacement ou une copie,
     /// une par fichier produit pour une conversion. Vide si l'action n'a rien
     /// changé (renommage vers le même nom, par exemple).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
